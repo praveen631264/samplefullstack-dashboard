@@ -210,7 +210,7 @@ export DATABASE_URL="postgresql://sampleapp:YOUR_PASSWORD@YOUR_RDS_ENDPOINT:5432
 npx drizzle-kit push --force
 
 # Start the app
-pm2 start dist/index.js --name samplefullstack-api --env production
+pm2 start dist/index.cjs --name samplefullstack-api --env production
 pm2 save
 pm2 startup
 ```

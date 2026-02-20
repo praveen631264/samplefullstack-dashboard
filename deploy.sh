@@ -66,7 +66,7 @@ export PORT="5000"
 pm2 delete samplefullstack-api 2>/dev/null || true
 
 # Start the app
-pm2 start dist/index.js --name samplefullstack-api --env production -- --port 5000
+pm2 start dist/index.cjs --name samplefullstack-api --env production
 pm2 save
 
 echo ""
