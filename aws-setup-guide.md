@@ -346,6 +346,34 @@ Replace `YOUR_EC2_PUBLIC_IP` with your Elastic IP:
 
 ## Future Deployments
 
+### Option A: GitHub Actions (automated - recommended)
+
+Every push to the `main` branch will automatically build and deploy your app. To set this up:
+
+1. Go to your GitHub repo > **Settings** > **Secrets and variables** > **Actions**
+2. Click **New repository secret** and add these 4 secrets:
+
+| Secret Name | Value | Example |
+|-------------|-------|---------|
+| `EC2_HOST` | Your EC2 Elastic IP address | `54.123.45.67` |
+| `EC2_USER` | Your EC2 SSH username | `ubuntu` |
+| `EC2_SSH_KEY` | Full contents of your `.pem` file | Copy/paste the entire file including `-----BEGIN RSA PRIVATE KEY-----` |
+| `DATABASE_URL` | Your RDS connection string | `postgresql://user:pass@your-rds-endpoint:5432/postgres` |
+
+3. Once secrets are added, just push code to `main` and deployment happens automatically:
+
+```bash
+git add .
+git commit -m "your changes"
+git push origin main
+```
+
+4. Monitor deployments at: `https://github.com/YOUR_USERNAME/YOUR_REPO/actions`
+
+You can also trigger a manual deployment from the Actions tab using the "Run workflow" button.
+
+### Option B: Deploy script (manual)
+
 After making code changes, just run:
 
 ```bash
@@ -427,7 +455,9 @@ project-root/
 │   ├── queries.sql       # Read-only inspection queries
 │   ├── run-db-scripts.sh # Script runner (connects via EC2)
 │   └── run-sql.cjs       # Node.js SQL executor
-├── deploy.sh             # Automated deployment script
+├── .github/workflows/
+│   └── deploy.yml        # GitHub Actions CI/CD pipeline
+├── deploy.sh             # Manual deployment script
 ├── aws-setup-guide.md    # This guide
 └── .gitignore            # Excludes .pem, .env, dist, node_modules
 ```
