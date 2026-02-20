@@ -22,7 +22,7 @@ Internet
    |
    +-- Node.js + PM2 (port 5000)
    |     |
-   |     +-- Express API server
+   |     +-- Express API server (dist/index.cjs)
    |
    +-- Connects to RDS PostgreSQL (port 5432, private network)
 ```
@@ -124,22 +124,28 @@ Press `i` to enter insert mode. Paste (replace YOUR_PUBLIC_IP with 54.69.3.81):
 ```apache
 <VirtualHost *:80>
     ServerName YOUR_PUBLIC_IP
-
     DocumentRoot /home/ubuntu/app/dist/public
 
     <Directory /home/ubuntu/app/dist/public>
-        AllowOverride All
+        Options FollowSymLinks
+        AllowOverride None
         Require all granted
     </Directory>
 
+    # Ensure JavaScript and CSS files are served with correct MIME types
+    AddType application/javascript .js
+    AddType text/css .css
+
+    # Backend API reverse proxy
     ProxyPreserveHost On
     ProxyPass /api http://localhost:5000/api
     ProxyPassReverse /api http://localhost:5000/api
 
+    # SPA fallback - only for non-file, non-directory, non-API routes
     RewriteEngine On
     RewriteCond %{REQUEST_URI} !^/api
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} !-f
+    RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} !-d
     RewriteRule . /index.html [L]
 </VirtualHost>
 ```
@@ -154,9 +160,27 @@ sudo a2ensite samplefullstack.conf
 sudo systemctl restart apache2
 ```
 
+> **Important corrections from original guide:**
+> 1. Added `Options FollowSymLinks` and changed `AllowOverride` to `None` (AllowOverride All is unnecessary and can cause issues)
+> 2. Added explicit MIME types for `.js` and `.css` files — without this, Apache may serve JavaScript files as `text/html`, causing a white screen
+> 3. Changed rewrite conditions to use `%{DOCUMENT_ROOT}%{REQUEST_URI}` instead of `%{REQUEST_FILENAME}` — this ensures Apache correctly detects existing static files and doesn't redirect them to `index.html`
+
 ---
 
-## Part 5: Create App Directory
+## Part 5: Fix Home Directory Permissions
+
+Apache needs permission to traverse the `/home/ubuntu` directory to reach the app files. Without this, you'll get a **403 Forbidden** error.
+
+```bash
+chmod 755 /home/ubuntu
+chmod -R 755 /home/ubuntu/app/dist/public
+```
+
+> **Why this is needed:** By default, Ubuntu sets `/home/ubuntu` to `750`, which blocks Apache (running as `www-data` user) from accessing files inside it. The `chmod 755` allows Apache to traverse into the directory while keeping your files secure.
+
+---
+
+## Part 6: Create App Directory
 
 ```bash
 mkdir -p /home/ubuntu/app
@@ -164,7 +188,7 @@ mkdir -p /home/ubuntu/app
 
 ---
 
-## Part 6: Deploy (Automated)
+## Part 7: Deploy (Automated)
 
 ### Option A: Automated deploy script (recommended)
 
@@ -209,15 +233,17 @@ export DATABASE_URL="postgresql://sampleapp:YOUR_PASSWORD@YOUR_RDS_ENDPOINT:5432
 # Push database schema
 npx drizzle-kit push --force
 
-# Start the app
-pm2 start dist/index.cjs --name samplefullstack-api --env production
+# Start the app (NOTE: the build outputs index.cjs, not index.js)
+pm2 start dist/index.cjs --name samplefullstack-api
 pm2 save
 pm2 startup
 ```
 
+> **Important:** The build outputs `dist/index.cjs` (CommonJS format), NOT `dist/index.js`. Using the wrong filename will cause PM2 to fail.
+
 ---
 
-## Part 7: Set DATABASE_URL Permanently on EC2
+## Part 8: Set DATABASE_URL Permanently on EC2
 
 So the database URL persists across reboots:
 
@@ -241,7 +267,7 @@ source /etc/environment
 
 ---
 
-## Part 8: Set PM2 to Start on Boot
+## Part 9: Set PM2 to Start on Boot
 
 ```bash
 pm2 startup systemd
@@ -272,6 +298,22 @@ After making code changes, just run:
 
 This will rebuild, upload, and restart the app automatically.
 
+After deploying, also re-apply file permissions if needed:
+
+```bash
+ssh -i Aihackathon.pem ubuntu@54.69.3.81 "chmod 755 /home/ubuntu && chmod -R 755 /home/ubuntu/app/dist/public"
+```
+
+---
+
+## Summary of Issues Found & Fixed During Deployment
+
+| Issue | Symptom | Root Cause | Fix |
+|-------|---------|------------|-----|
+| **Wrong server filename** | PM2 fails to start | Build outputs `dist/index.cjs`, not `dist/index.js` | Use `pm2 start dist/index.cjs` |
+| **403 Forbidden on frontend** | Apache returns "Forbidden" error page | `/home/ubuntu` directory had `750` permissions, blocking Apache | Run `chmod 755 /home/ubuntu` |
+| **White screen (blank page)** | Page loads but nothing renders | Apache served `.js` files with `text/html` MIME type instead of `application/javascript`; also rewrite rules caught static file requests | Added `AddType` directives and used `%{DOCUMENT_ROOT}%{REQUEST_URI}` in rewrite conditions |
+
 ---
 
 ## Troubleshooting
@@ -280,6 +322,17 @@ This will rebuild, upload, and restart the app automatically.
 - Check security group allows port 22
 - Check instance is in a PUBLIC subnet
 - Check Elastic IP is associated
+
+### 403 Forbidden on frontend
+- Check home directory permissions: `ls -la /home/ubuntu` (should show `rwxr-xr-x`)
+- Fix with: `chmod 755 /home/ubuntu`
+- Check public directory permissions: `chmod -R 755 /home/ubuntu/app/dist/public`
+
+### White screen / JavaScript not loading
+- Open browser developer console (F12 > Console tab) and look for errors
+- If you see "MIME type text/html" errors, the Apache config is missing MIME type directives
+- Check JS file is served correctly: `curl -I http://localhost:80/assets/index-XXXXX.js` — Content-Type should be `application/javascript`
+- Verify the Apache config uses `%{DOCUMENT_ROOT}%{REQUEST_URI}` in rewrite conditions (not just `%{REQUEST_FILENAME}`)
 
 ### Frontend loads but API calls fail
 - Check PM2 is running: `pm2 list`
@@ -294,3 +347,4 @@ This will rebuild, upload, and restart the app automatically.
 ### App crashes on startup
 - Check PM2 logs: `pm2 logs samplefullstack-api`
 - Check DATABASE_URL is set: `echo $DATABASE_URL`
+- Make sure you're using `dist/index.cjs` (not `dist/index.js`)
