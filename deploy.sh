@@ -8,12 +8,12 @@
 # Before first run, update the variables below with your values.
 # =============================================================
 
-# ---- CONFIGURATION ----
-EC2_IP="54.69.3.81"
+# ---- CONFIGURATION (Update these with your values) ----
+EC2_IP="YOUR_EC2_PUBLIC_IP"
 EC2_USER="ubuntu"
-SSH_KEY="$(dirname "$0")/Aihackathon.pem"
+SSH_KEY="path/to/your-key.pem"
 REMOTE_DIR="/home/ubuntu/app"
-DB_URL="postgresql://aihackathon:aihackathon@aihackathondb.c96o0o2w623s.us-west-2.rds.amazonaws.com:5432/samplefullstack"
+DB_URL="postgresql://YOUR_DB_USER:YOUR_DB_PASSWORD@YOUR_RDS_ENDPOINT:5432/postgres"
 # ---- END CONFIGURATION ----
 
 set -e
@@ -42,16 +42,14 @@ scp -i "$SSH_KEY" -o StrictHostKeyChecking=no package-lock.json "$EC2_USER@$EC2_
 scp -i "$SSH_KEY" -o StrictHostKeyChecking=no drizzle.config.ts "$EC2_USER@$EC2_IP:$REMOTE_DIR/"
 echo "      Upload complete."
 
-# Step 4: Install dependencies and push DB schema
+# Step 4: Install dependencies on EC2
 echo ""
-echo "[4/5] Installing dependencies and setting up database..."
+echo "[4/5] Installing dependencies on EC2..."
 ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$EC2_USER@$EC2_IP" << ENDSSH
 cd $REMOTE_DIR
 npm install --production
-export DATABASE_URL="$DB_URL"
-npx drizzle-kit push --force
 ENDSSH
-echo "      Dependencies installed, database schema pushed."
+echo "      Dependencies installed."
 
 # Step 5: Start/restart the app with PM2
 echo ""
@@ -60,14 +58,17 @@ ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$EC2_USER@$EC2_IP" << ENDSSH
 cd $REMOTE_DIR
 export DATABASE_URL="$DB_URL"
 export NODE_ENV="production"
-export PORT="5000"
 
 # Stop existing app if running
 pm2 delete samplefullstack-api 2>/dev/null || true
 
-# Start the app
-pm2 start dist/index.cjs --name samplefullstack-api --env production
+# Start the app with environment variables
+NODE_ENV=production DATABASE_URL="$DB_URL" pm2 start dist/index.cjs --name samplefullstack-api
 pm2 save
+
+# Fix permissions for Apache
+chmod 755 /home/ubuntu
+chmod -R 755 /home/ubuntu/app/dist/public
 
 echo ""
 echo "PM2 process status:"
@@ -79,7 +80,7 @@ echo "========================================="
 echo "  Deployment Complete!"
 echo "========================================="
 echo ""
-echo "  Frontend:   http://$EC2_IP"
+echo "  Frontend:    http://$EC2_IP"
 echo "  API Health:  http://$EC2_IP/api/health"
 echo "  All APIs:    http://$EC2_IP/api/*"
 echo ""

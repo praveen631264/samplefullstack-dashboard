@@ -6,9 +6,9 @@
 # =============================================
 
 # --- Configuration ---
-EC2_IP="54.69.3.81"
-SSH_KEY="/home/runner/workspace/Aihackathon.pem"
-DB_URL="postgresql://aihackathon:aihackathon@aihackathondb.c96o0o2w623s.us-west-2.rds.amazonaws.com:5432/postgres"
+EC2_IP="YOUR_EC2_PUBLIC_IP"
+SSH_KEY="path/to/your-key.pem"
+DB_URL="postgresql://YOUR_DB_USER:YOUR_DB_PASSWORD@YOUR_RDS_ENDPOINT:5432/postgres"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # --- Colors for output ---
