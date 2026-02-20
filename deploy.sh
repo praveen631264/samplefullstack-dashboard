@@ -8,12 +8,12 @@
 # Before first run, update the variables below with your values.
 # =============================================================
 
-# ---- CONFIGURATION (UPDATE THESE) ----
+# ---- CONFIGURATION ----
 EC2_IP="54.69.3.81"
 EC2_USER="ubuntu"
-SSH_KEY="$HOME/Aihackathon.pem"
+SSH_KEY="$(dirname "$0")/Aihackathon.pem"
 REMOTE_DIR="/home/ubuntu/app"
-DB_URL="postgresql://sampleapp:YOUR_PASSWORD@YOUR_RDS_ENDPOINT:5432/samplefullstack"
+DB_URL="postgresql://aihackathon:aihackathon@aihackathondb.c96o0o2w623s.us-west-2.rds.amazonaws.com:5432/samplefullstack"
 # ---- END CONFIGURATION ----
 
 set -e
