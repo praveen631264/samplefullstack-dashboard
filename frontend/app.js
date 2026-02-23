@@ -1,5 +1,5 @@
 const API_BASE = window.location.origin;
-const N8N_WEBHOOK_URL = 'https://n8n.aix.devx.systems/webhook-test/cbc9a13e-952e-4708-83d4-eac803e99a93';
+const N8N_WEBHOOK_URL = 'https://n8n.aix.devx.systems/webhook/cbc9a13e-952e-4708-83d4-eac803e99a93';
 const CALLBACK_BASE_URL = window.location.origin;
 let allWorkflows = [];
 let allEvents = [];
