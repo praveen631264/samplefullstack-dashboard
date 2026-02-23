@@ -4,6 +4,8 @@ import com.data.pipeline.model.SampleEvent;
 import com.data.pipeline.repository.SampleEventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
@@ -31,6 +33,13 @@ public class SampleEventService {
 
     public SampleEvent saveEvent(SampleEvent event) {
         return repository.save(event);
+    }
+
+    public synchronized String generateCaId() {
+        String datePrefix = "CA-" + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyy"));
+        long count = repository.countByEventIdStartingWith(datePrefix);
+        long sequence = count + 1;
+        return datePrefix + "-" + String.format("%03d", sequence);
     }
 
     public Map<String, Object> getStats() {

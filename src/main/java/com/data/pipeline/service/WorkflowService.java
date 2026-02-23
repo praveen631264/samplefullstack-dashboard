@@ -6,10 +6,11 @@ import com.data.pipeline.repository.WorkflowExecutionRepository;
 import com.data.pipeline.repository.AuditTrailRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class WorkflowService {
@@ -26,7 +27,7 @@ public class WorkflowService {
 
     public WorkflowExecution createWorkflow(String description, String s1Name, String s2Name) {
         WorkflowExecution wf = new WorkflowExecution();
-        wf.setWorkflowId(UUID.randomUUID().toString());
+        wf.setWorkflowId(generateWorkflowId());
         wf.setDescription(description);
         wf.setSource1FileName(s1Name);
         wf.setSource2FileName(s2Name);
@@ -67,5 +68,12 @@ public class WorkflowService {
 
     public List<AuditTrail> getAuditTrail() {
         return auditRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    private synchronized String generateWorkflowId() {
+        String datePrefix = "EVT-" + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy"));
+        long count = workflowRepository.countByWorkflowIdStartingWith(datePrefix);
+        long sequence = count + 1;
+        return datePrefix + "-" + String.format("%03d", sequence);
     }
 }

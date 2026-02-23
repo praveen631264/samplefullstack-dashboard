@@ -5,15 +5,16 @@ let allWorkflows = [];
 let allEvents = [];
 let currentFilter = 'all';
 let pollingInterval = null;
+let submittedWorkflowId = null;
 
 function switchView(view) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(`view-${view}`).classList.add('active');
   document.querySelector(`[data-view="${view}"]`).classList.add('active');
-  if (view === 'launcher') refreshWorkflows();
+  if (view === 'launcher' && submittedWorkflowId) pollSubmittedWorkflow();
   if (view === 'events') loadEvents();
-  if (view === 'dashboard') loadDashboard();
+  if (view === 'train') loadSavedAgents();
   if (view === 'bpmn') renderBPMN();
   lucide.createIcons();
 }
@@ -48,7 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   startPolling();
-  refreshWorkflows();
   renderBPMN();
 });
 
@@ -78,7 +78,10 @@ async function submitWorkflow(e) {
     const workflow = await res.json();
     const workflowId = workflow.workflowId;
 
-    showToast(`Submission accepted. Your workflow ID: ${workflowId.substring(0, 12)}...`, 'success');
+    showToast(`Submission accepted. Your workflow ID: ${workflowId}`, 'success');
+
+    submittedWorkflowId = workflowId;
+    showSubmittedCard(workflow);
 
     await submitToN8nViaForm(source1Input, source2Input, workflowId, description);
 
@@ -97,14 +100,14 @@ async function submitWorkflow(e) {
       el.textContent = '';
     });
     document.querySelectorAll('.file-input-wrap').forEach(z => z.classList.remove('has-file'));
-    refreshWorkflows();
+    pollSubmittedWorkflow();
   } catch (err) {
     console.error('Workflow error:', err);
     showToast(`Error: ${err.message}`, 'error');
   } finally {
     btn.disabled = false;
     btn.classList.remove('loading');
-    btn.innerHTML = '<i data-lucide="send" class="btn-svg"></i> Submit Workflow';
+    btn.innerHTML = '<i data-lucide="send" class="btn-svg"></i> Submit';
     lucide.createIcons();
   }
 }
@@ -171,6 +174,89 @@ function submitToN8nViaForm(source1Input, source2Input, workflowId, description)
   });
 }
 
+function showSubmittedCard(wf) {
+  const card = document.getElementById('submitted-workflow-card');
+  card.style.display = 'block';
+  renderSubmittedCard(wf);
+}
+
+function renderSubmittedCard(wf) {
+  const card = document.getElementById('submitted-workflow-card');
+  const statusMap = {
+    'STARTED': 'Started', 'PARSING': 'In Progress',
+    'EVENT_CREATED': 'Event Created', 'VERIFYING': 'Verifying',
+    'COMPLETED': 'Completed', 'COMPLETED_WITH_FAILURE': 'Failed', 'FAILED': 'Failed'
+  };
+  const statusLabel = statusMap[wf.status] || wf.status;
+  const isComplete = wf.status === 'COMPLETED';
+  const isFailed = wf.status === 'FAILED' || wf.status === 'COMPLETED_WITH_FAILURE';
+  const statusClass = isComplete ? 'status-completed' : isFailed ? 'status-failed' : 'status-progress';
+
+  const caIdRow = wf.eventId ? `
+      <div class="submitted-info-row">
+        <span class="submitted-label">CA ID</span>
+        <span class="submitted-value">
+          <a href="#" class="caid-link" onclick="navigateToEvent('${wf.eventId}'); return false;" data-testid="link-caid-${wf.eventId}">
+            <i data-lucide="external-link" class="caid-link-icon"></i> ${wf.eventId}
+          </a>
+        </span>
+      </div>` : '';
+
+  card.innerHTML = `
+    <div class="card-header">
+      <i data-lucide="activity" class="header-icon"></i>
+      <h2>Submitted Event Status</h2>
+    </div>
+    <div class="submitted-card-body">
+      <div class="submitted-info-row">
+        <span class="submitted-label">Workflow ID</span>
+        <span class="submitted-value" data-testid="text-submitted-id">${wf.workflowId}</span>
+      </div>
+      <div class="submitted-info-row">
+        <span class="submitted-label">Description</span>
+        <span class="submitted-value" data-testid="text-submitted-desc">${wf.description || 'No description'}</span>
+      </div>
+      <div class="submitted-info-row">
+        <span class="submitted-label">Source 1</span>
+        <span class="submitted-value">${wf.source1FileName || '—'}</span>
+      </div>
+      <div class="submitted-info-row">
+        <span class="submitted-label">Source 2</span>
+        <span class="submitted-value">${wf.source2FileName || '—'}</span>
+      </div>
+      <div class="submitted-info-row">
+        <span class="submitted-label">Status</span>
+        <span class="submitted-status ${statusClass}" data-testid="text-submitted-status">
+          <i data-lucide="${isComplete ? 'check-circle-2' : isFailed ? 'alert-circle' : 'loader'}" class="status-icon-sm"></i>
+          ${statusLabel}
+        </span>
+      </div>
+      ${caIdRow}
+      ${buildProgressBar(wf)}
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+function pollSubmittedWorkflow() {
+  if (!submittedWorkflowId) return;
+  const interval = setInterval(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/workflows`);
+      const workflows = await res.json();
+      const wf = workflows.find(w => w.workflowId === submittedWorkflowId);
+      if (wf) {
+        renderSubmittedCard(wf);
+        if (wf.status === 'COMPLETED' || wf.status === 'FAILED' || wf.status === 'COMPLETED_WITH_FAILURE') {
+          clearInterval(interval);
+        }
+      }
+    } catch (err) {
+      console.error('Poll error:', err);
+    }
+  }, 3000);
+}
+
 let workflowSort = { field: 'createdAt', dir: 'desc' };
 
 let eventSort = { field: 'createdAt', dir: 'desc' };
@@ -192,7 +278,7 @@ async function refreshWorkflows() {
     const res = await fetch(`${API_BASE}/api/workflows`);
     allWorkflows = await res.json();
     renderWorkflowList();
-    updateStats();
+
   } catch (err) {
     console.error('Refresh error:', err);
   }
@@ -290,23 +376,6 @@ function renderWorkflowList() {
   lucide.createIcons();
 }
 
-function updateStats() {
-  const total = allWorkflows.length;
-  const completed = allWorkflows.filter(w => w.status === 'COMPLETED').length;
-  const inProgress = allWorkflows.filter(w => !['COMPLETED', 'COMPLETED_WITH_FAILURE', 'FAILED'].includes(w.status)).length;
-  const failed = allWorkflows.filter(w => ['COMPLETED_WITH_FAILURE', 'FAILED'].includes(w.status)).length;
-
-  animateValue('stat-total-workflows', total);
-  animateValue('stat-completed', completed);
-  animateValue('stat-in-progress', inProgress);
-  animateValue('stat-failed', failed);
-}
-
-function animateValue(id, target) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.textContent = target;
-}
 
 async function loadEvents() {
   try {
@@ -327,7 +396,7 @@ function renderEventsTable() {
   if (activeIcon) activeIcon.textContent = eventSort.dir === 'desc' ? ' \u2193' : ' \u2191';
 
   if (!allEvents.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">No events found</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted)">No events found</td></tr>';
     return;
   }
 
@@ -343,7 +412,6 @@ function renderEventsTable() {
       <td>${ev.payableDate || '-'}</td>
       <td><span class="status-badge status-${ev.status?.replace(/\s/g, '-')}">${ev.status}</span></td>
       <td style="font-size:11px;color:var(--text-muted)">${formatDetailedTime(ev.createdAt)}</td>
-      <td>${ev.confidenceScore ? `${(ev.confidenceScore * 100).toFixed(0)}%` : '-'}</td>
       <td><button class="btn-view" onclick="viewEventDetail('${ev.eventId}')" data-testid="button-view-event-${ev.eventId}">View</button></td>
     </tr>
   `).join('');
@@ -395,7 +463,6 @@ async function viewEventDetail(eventId) {
         <div class="detail-item"><div class="detail-label">Premium Rate</div><div class="detail-value">${ev.premiumRate?.toFixed(2) || '-'}</div></div>
         <div class="detail-item"><div class="detail-label">Security Called Amount</div><div class="detail-value">${ev.securityCalledAmount?.toLocaleString() || '-'}</div></div>
         <div class="detail-item"><div class="detail-label">Payable Date</div><div class="detail-value">${ev.payableDate || '-'}</div></div>
-        <div class="detail-item"><div class="detail-label">Confidence Score</div><div class="detail-value">${ev.confidenceScore ? `${(ev.confidenceScore * 100).toFixed(0)}%` : '-'}</div></div>
         <div class="detail-item full-width"><div class="detail-label">Remarks</div><div class="detail-value">${ev.remarks || 'None'}</div></div>
       </div>
       ${ev.source1Data || ev.source2Data ? `
@@ -418,77 +485,15 @@ function viewWorkflowEvent(eventId, workflowId) {
   }
 }
 
+function navigateToEvent(eventId) {
+  switchView('events');
+  setTimeout(() => viewEventDetail(eventId), 300);
+}
+
 function closeModal() {
   document.getElementById('event-modal').classList.remove('active');
 }
 
-async function loadDashboard() {
-  try {
-    const [statsRes, auditRes] = await Promise.all([
-      fetch(`${API_BASE}/api/stats`),
-      fetch(`${API_BASE}/api/audit`)
-    ]);
-    const stats = await statsRes.json();
-    const audits = await auditRes.json();
-    renderTypeChart(stats.byType);
-    renderVerificationGauge(stats.byStatus);
-    renderAuditTrail(audits);
-  } catch (err) {
-    console.error('Dashboard error:', err);
-  }
-}
-
-function renderTypeChart(byType) {
-  const container = document.getElementById('chart-by-type');
-  if (!byType || !byType.length) {
-    container.innerHTML = '<div class="empty-state"><p>No data yet</p></div>';
-    return;
-  }
-  const max = Math.max(...byType.map(t => t.count));
-  const colors = { 'Full Call': '#dc2626', 'Partial Call': '#d97706', 'Redemption': '#2563eb', 'Reorg': '#7c3aed' };
-  container.innerHTML = `<div class="chart-bar-group">${byType.map(t => `
-    <div class="chart-bar-item">
-      <div class="chart-bar-label">${t.event_type}</div>
-      <div class="chart-bar-track">
-        <div class="chart-bar-fill" style="width:${(t.count / max * 100)}%;background:${colors[t.event_type] || '#4f46e5'}">${t.count}</div>
-      </div>
-    </div>
-  `).join('')}</div>`;
-}
-
-function renderVerificationGauge(byStatus) {
-  if (!byStatus || !byStatus.length) return;
-  const total = byStatus.reduce((s, b) => s + b.count, 0);
-  const verified = byStatus.find(b => b.status === 'Verified')?.count || 0;
-  const pct = total > 0 ? Math.round((verified / total) * 100) : 0;
-  const gauge = document.querySelector('.gauge');
-  if (gauge) gauge.style.background = `conic-gradient(var(--success) ${pct * 3.6}deg, var(--bg-body) ${pct * 3.6}deg)`;
-  const value = document.getElementById('gauge-value');
-  if (value) value.textContent = `${pct}%`;
-}
-
-function renderAuditTrail(audits) {
-  const container = document.getElementById('audit-list');
-  if (!audits || !audits.length) {
-    container.innerHTML = '<div class="empty-state"><p>No audit entries yet</p></div>';
-    return;
-  }
-  const actionColors = {
-    'WORKFLOW_CREATED': '#2563eb', 'N8N_TRIGGERED': '#4f46e5',
-    'STATUS_PARSING': '#d97706', 'STATUS_EVENT_CREATED': '#059669',
-    'STATUS_VERIFYING': '#7c3aed', 'STATUS_COMPLETED': '#059669',
-    'EVENT_CREATED': '#059669', 'EVENT_UPDATED': '#4f46e5',
-    'STATUS_FAILED': '#dc2626', 'N8N_TRIGGER_FAILED': '#dc2626'
-  };
-  container.innerHTML = audits.slice(0, 30).map(a => `
-    <div class="audit-item">
-      <div class="audit-dot" style="background:${actionColors[a.action] || '#94a3b8'}"></div>
-      <div class="audit-action">${a.action}</div>
-      <div class="audit-details">${a.details || ''}</div>
-      <div class="audit-time">${timeAgo(a.createdAt)}</div>
-    </div>
-  `).join('');
-}
 
 let bpmnViewer = null;
 
@@ -647,6 +652,192 @@ function formatJSON(data) {
     const parsed = typeof data === 'string' ? JSON.parse(data) : data;
     return JSON.stringify(parsed, null, 2);
   } catch { return data; }
+}
+
+let trainState = { step: 1, makerFinalized: false, checkerFinalized: false, compareFinalized: false };
+
+function checkTrainResults(type) {
+  const promptEl = document.getElementById(`train-${type}-prompt`);
+  const prompt = promptEl ? promptEl.value.trim() : '';
+
+  if (!prompt) {
+    showToast('Please enter a prompt first', 'warning');
+    return;
+  }
+
+  if (type === 'maker') {
+    const fileInput = document.getElementById('train-maker-file');
+    if (!fileInput.files.length) { showToast('Please upload a Maker file', 'warning'); return; }
+  } else if (type === 'checker') {
+    const fileInput = document.getElementById('train-checker-file');
+    if (!fileInput.files.length) { showToast('Please upload a Checker file', 'warning'); return; }
+  }
+
+  const resultsPanel = document.getElementById(`results-${type}`);
+  const resultsContent = document.getElementById(`results-${type}-content`);
+  resultsPanel.style.display = 'block';
+  resultsContent.textContent = 'Processing... (n8n workflow URL not configured yet)\n\nPrompt submitted:\n' + prompt;
+
+  const finalizeBtn = document.getElementById(`btn-finalize-${type}`);
+  if (finalizeBtn) finalizeBtn.disabled = false;
+
+  showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} results check initiated`, 'info');
+  lucide.createIcons();
+}
+
+function finalizeStep(step) {
+  const stepNames = { 1: 'maker', 2: 'checker', 3: 'compare' };
+  const name = stepNames[step];
+
+  trainState[`${name}Finalized`] = true;
+
+  const section = document.getElementById(`train-step-${step}`);
+  section.classList.add('finalized');
+
+  const prompt = document.getElementById(`train-${name}-prompt`);
+  if (prompt) prompt.disabled = true;
+
+  const indicator = document.getElementById(`step-indicator-${step}`);
+  indicator.classList.remove('active');
+  indicator.classList.add('done');
+
+  const nextStep = step + 1;
+  if (nextStep <= 4) {
+    const nextSection = document.getElementById(`train-step-${nextStep}`);
+    nextSection.classList.remove('locked');
+    const lockBadge = document.getElementById(`lock-badge-${nextStep}`);
+    if (lockBadge) lockBadge.style.display = 'none';
+    const nextIndicator = document.getElementById(`step-indicator-${nextStep}`);
+    nextIndicator.classList.add('active');
+  }
+
+  if (step === 3) {
+    renderAgentSummary();
+  }
+
+  showToast(`${name.charAt(0).toUpperCase() + name.slice(1)} prompt finalized`, 'success');
+  lucide.createIcons();
+}
+
+function renderAgentSummary() {
+  const makerPrompt = document.getElementById('train-maker-prompt').value.trim();
+  const checkerPrompt = document.getElementById('train-checker-prompt').value.trim();
+  const comparePrompt = document.getElementById('train-compare-prompt').value.trim();
+
+  const summary = document.getElementById('agent-summary');
+  summary.innerHTML = `
+    <div class="agent-summary-row"><span class="agent-summary-label">Maker Prompt</span><span class="agent-summary-value">${makerPrompt.substring(0, 80)}${makerPrompt.length > 80 ? '...' : ''}</span></div>
+    <div class="agent-summary-row"><span class="agent-summary-label">Checker Prompt</span><span class="agent-summary-value">${checkerPrompt.substring(0, 80)}${checkerPrompt.length > 80 ? '...' : ''}</span></div>
+    <div class="agent-summary-row"><span class="agent-summary-label">Compare Prompt</span><span class="agent-summary-value">${comparePrompt.substring(0, 80)}${comparePrompt.length > 80 ? '...' : ''}</span></div>
+  `;
+}
+
+async function saveAgent() {
+  const agentName = document.getElementById('train-agent-name').value.trim();
+  if (!agentName) { showToast('Please enter an agent name', 'warning'); return; }
+
+  const payload = {
+    agentName: agentName,
+    makerPrompt: document.getElementById('train-maker-prompt').value.trim(),
+    checkerPrompt: document.getElementById('train-checker-prompt').value.trim(),
+    comparePrompt: document.getElementById('train-compare-prompt').value.trim()
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/api/agents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || 'Failed to save agent', 'error');
+      return;
+    }
+    showToast(`Agent "${agentName}" saved successfully`, 'success');
+    loadSavedAgents();
+    resetTrainForm();
+  } catch (err) {
+    console.error('Save agent error:', err);
+    showToast('Error saving agent', 'error');
+  }
+}
+
+function resetTrainForm() {
+  trainState = { step: 1, makerFinalized: false, checkerFinalized: false, compareFinalized: false };
+
+  ['train-maker-prompt', 'train-checker-prompt', 'train-compare-prompt'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = '';
+    el.disabled = false;
+  });
+  document.getElementById('train-agent-name').value = '';
+  document.getElementById('agent-summary').innerHTML = '';
+  ['results-maker', 'results-checker', 'results-compare'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+
+  ['train-maker-file', 'train-checker-file'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  ['train-maker-file-name', 'train-checker-file-name'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = '';
+    el.classList.remove('visible');
+  });
+  document.querySelectorAll('#view-train .file-input-wrap').forEach(z => z.classList.remove('has-file'));
+
+  ['btn-finalize-maker', 'btn-finalize-checker', 'btn-finalize-compare'].forEach(id => {
+    document.getElementById(id).disabled = true;
+  });
+
+  for (let i = 1; i <= 4; i++) {
+    const section = document.getElementById(`train-step-${i}`);
+    section.classList.remove('finalized');
+    if (i > 1) section.classList.add('locked');
+
+    const indicator = document.getElementById(`step-indicator-${i}`);
+    indicator.classList.remove('active', 'done');
+    if (i === 1) indicator.classList.add('active');
+
+    const lockBadge = document.getElementById(`lock-badge-${i}`);
+    if (lockBadge) lockBadge.style.display = '';
+  }
+
+  lucide.createIcons();
+}
+
+async function loadSavedAgents() {
+  try {
+    const res = await fetch(`${API_BASE}/api/agents`);
+    const agents = await res.json();
+    const section = document.getElementById('saved-agents-section');
+    const list = document.getElementById('saved-agents-list');
+
+    if (agents.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+    list.innerHTML = agents.map(a => `
+      <div class="saved-agent-item" data-testid="agent-item-${a.id}">
+        <div class="saved-agent-icon"><i data-lucide="bot"></i></div>
+        <div class="saved-agent-info">
+          <div class="saved-agent-name">${a.agentName}</div>
+          <div class="saved-agent-meta">Created ${formatDetailedTime(a.createdAt)}</div>
+        </div>
+        <div class="saved-agent-badges">
+          <span class="step-badge">Maker</span>
+          <span class="step-badge">Checker</span>
+          <span class="step-badge">Compare</span>
+        </div>
+      </div>
+    `).join('');
+    lucide.createIcons();
+  } catch (err) {
+    console.error('Load agents error:', err);
+  }
 }
 
 function showToast(message, type = 'info') {

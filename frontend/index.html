@@ -27,13 +27,13 @@
       </div>
       <div class="nav-center">
         <button class="nav-tab active" data-view="launcher" onclick="switchView('launcher')" data-testid="tab-launcher">
-          <i data-lucide="rocket" class="tab-svg"></i> Workflow Launcher
+          <i data-lucide="rocket" class="tab-svg"></i> Create Event
         </button>
         <button class="nav-tab" data-view="events" onclick="switchView('events')" data-testid="tab-events">
           <i data-lucide="clipboard-list" class="tab-svg"></i> Event Manager
         </button>
-        <button class="nav-tab" data-view="dashboard" onclick="switchView('dashboard')" data-testid="tab-dashboard">
-          <i data-lucide="bar-chart-3" class="tab-svg"></i> Dashboard
+        <button class="nav-tab" data-view="train" onclick="switchView('train')" data-testid="tab-train">
+          <i data-lucide="brain" class="tab-svg"></i> Train my Agents
         </button>
         <button class="nav-tab" data-view="bpmn" onclick="switchView('bpmn')" data-testid="tab-bpmn">
           <i data-lucide="git-branch" class="tab-svg"></i> Process Viewer
@@ -47,46 +47,15 @@
     </nav>
 
     <div class="view active" id="view-launcher">
-      <div class="stats-bar">
-        <div class="stat-card">
-          <div class="stat-icon-wrap stat-icon-total"><i data-lucide="layers" class="stat-svg"></i></div>
-          <div class="stat-content">
-            <div class="stat-value" id="stat-total-workflows" data-testid="text-total-workflows">0</div>
-            <div class="stat-label">Total Workflows</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon-wrap stat-icon-completed"><i data-lucide="check-circle-2" class="stat-svg"></i></div>
-          <div class="stat-content">
-            <div class="stat-value" id="stat-completed" data-testid="text-completed">0</div>
-            <div class="stat-label">Completed</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon-wrap stat-icon-progress"><i data-lucide="loader" class="stat-svg"></i></div>
-          <div class="stat-content">
-            <div class="stat-value" id="stat-in-progress" data-testid="text-in-progress">0</div>
-            <div class="stat-label">In Progress</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon-wrap stat-icon-failed"><i data-lucide="alert-circle" class="stat-svg"></i></div>
-          <div class="stat-content">
-            <div class="stat-value" id="stat-failed" data-testid="text-failed">0</div>
-            <div class="stat-label">Failed</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="launcher-grid">
+      <div class="create-event-layout">
         <div class="form-panel card">
           <div class="card-header">
             <i data-lucide="plus-circle" class="header-icon"></i>
-            <h2>Create New Workflow</h2>
+            <h2>Create Event</h2>
           </div>
           <form id="workflow-form" onsubmit="submitWorkflow(event)">
             <div class="form-group">
-              <label for="source1"><i data-lucide="file-spreadsheet" class="label-icon"></i> Maker File Upload</label>
+              <label for="source1"><i data-lucide="file-spreadsheet" class="label-icon"></i> Upload Maker File</label>
               <div class="file-input-wrap" id="dropzone-source1" onclick="document.getElementById('source1').click()" data-testid="input-maker-file">
                 <i data-lucide="upload-cloud" class="file-upload-icon"></i>
                 <span class="file-placeholder">Choose XLSX/CSV file or drag here</span>
@@ -97,7 +66,7 @@
             </div>
 
             <div class="form-group">
-              <label for="source2"><i data-lucide="file-check" class="label-icon"></i> Checker File Upload</label>
+              <label for="source2"><i data-lucide="file-check" class="label-icon"></i> Upload Checker File</label>
               <div class="file-input-wrap" id="dropzone-source2" onclick="document.getElementById('source2').click()" data-testid="input-checker-file">
                 <i data-lucide="upload-cloud" class="file-upload-icon"></i>
                 <span class="file-placeholder">Choose PDF file or drag here</span>
@@ -114,25 +83,12 @@
             </div>
 
             <button type="submit" class="btn-submit" id="submit-btn" data-testid="button-submit">
-              <i data-lucide="send" class="btn-svg"></i> Submit Workflow
+              <i data-lucide="send" class="btn-svg"></i> Submit
             </button>
           </form>
         </div>
 
-        <div class="executions-panel card">
-          <div class="card-header">
-            <i data-lucide="activity" class="header-icon"></i>
-            <h2>Workflow Executions</h2>
-            <button class="btn-icon-action" onclick="refreshWorkflows()" data-testid="button-refresh">
-              <i data-lucide="refresh-cw" class="action-svg"></i>
-            </button>
-          </div>
-          <div class="workflow-grid" id="workflow-list" data-testid="grid-workflow-list">
-            <div class="empty-state">
-              <i data-lucide="inbox" class="empty-svg"></i>
-              <p>No workflows yet. Upload files to get started.</p>
-            </div>
-          </div>
+        <div id="submitted-workflow-card" class="submitted-card card" style="display:none;" data-testid="card-submitted-workflow">
         </div>
       </div>
     </div>
@@ -161,7 +117,7 @@
         <table class="data-table" id="events-table">
           <thead>
             <tr>
-              <th onclick="updateEventSort('eventId')" class="sortable">Event ID <span class="sort-icon" id="sort-eventId"></span></th>
+              <th onclick="updateEventSort('eventId')" class="sortable">CAID <span class="sort-icon" id="sort-eventId"></span></th>
               <th onclick="updateEventSort('eventType')" class="sortable">Type <span class="sort-icon" id="sort-eventType"></span></th>
               <th onclick="updateEventSort('cusip')" class="sortable">CUSIP <span class="sort-icon" id="sort-cusip"></span></th>
               <th onclick="updateEventSort('principalRate')" class="sortable">Principal Rate <span class="sort-icon" id="sort-principalRate"></span></th>
@@ -169,7 +125,6 @@
               <th onclick="updateEventSort('payableDate')" class="sortable">Payable Date <span class="sort-icon" id="sort-payableDate"></span></th>
               <th onclick="updateEventSort('status')" class="sortable">Status <span class="sort-icon" id="sort-status"></span></th>
               <th onclick="updateEventSort('createdAt')" class="sortable">Created <span class="sort-icon" id="sort-createdAt"></span></th>
-              <th onclick="updateEventSort('confidenceScore')" class="sortable">Confidence <span class="sort-icon" id="sort-confidenceScore"></span></th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -178,29 +133,149 @@
       </div>
     </div>
 
-    <div class="view" id="view-dashboard">
-      <div class="card-header" style="margin-bottom:20px">
-        <i data-lucide="bar-chart-3" class="header-icon"></i>
-        <h2>Analytics Dashboard</h2>
-      </div>
-      <div class="dashboard-grid">
-        <div class="card dash-card">
-          <h3>Events by Type</h3>
-          <div class="chart-container" id="chart-by-type"></div>
+    <div class="view" id="view-train">
+      <div class="train-layout">
+        <div class="train-header card">
+          <div class="card-header">
+            <i data-lucide="brain" class="header-icon"></i>
+            <h2>Train my Agents</h2>
+          </div>
+          <div class="train-steps">
+            <div class="train-step active" id="step-indicator-1"><span class="step-num">1</span> Maker Prompt</div>
+            <div class="train-step-arrow"><i data-lucide="chevron-right"></i></div>
+            <div class="train-step" id="step-indicator-2"><span class="step-num">2</span> Checker Prompt</div>
+            <div class="train-step-arrow"><i data-lucide="chevron-right"></i></div>
+            <div class="train-step" id="step-indicator-3"><span class="step-num">3</span> Compare Prompt</div>
+            <div class="train-step-arrow"><i data-lucide="chevron-right"></i></div>
+            <div class="train-step" id="step-indicator-4"><span class="step-num">4</span> Save Agent</div>
+          </div>
         </div>
-        <div class="card dash-card">
-          <h3>Verification Rate</h3>
-          <div class="chart-container" id="chart-verification">
-            <div class="gauge-wrapper">
-              <div class="gauge" id="verification-gauge">
-                <div class="gauge-value" id="gauge-value">0%</div>
+
+        <div class="train-section card" id="train-step-1">
+          <div class="card-header">
+            <i data-lucide="file-spreadsheet" class="header-icon"></i>
+            <h2>Build Maker Prompt</h2>
+            <span class="step-badge">Step 1</span>
+          </div>
+          <div class="train-section-body">
+            <div class="form-group">
+              <label><i data-lucide="upload-cloud" class="label-icon"></i> Upload Maker File</label>
+              <div class="file-input-wrap" id="dropzone-train-maker" onclick="document.getElementById('train-maker-file').click()" data-testid="input-train-maker-file">
+                <i data-lucide="upload-cloud" class="file-upload-icon"></i>
+                <span class="file-placeholder">Choose XLSX/CSV file or drag here</span>
+                <span class="file-name" id="train-maker-file-name"></span>
+                <input type="file" id="train-maker-file" accept=".xlsx,.xls,.csv" hidden onchange="handleFileSelect(this, 'train-maker-file-name')">
               </div>
+            </div>
+            <div class="form-group">
+              <label><i data-lucide="message-square" class="label-icon"></i> Maker Prompt</label>
+              <textarea id="train-maker-prompt" class="prompt-editor" placeholder="Enter the prompt to instruct the AI agent how to process Maker files..." data-testid="input-maker-prompt"></textarea>
+            </div>
+            <div class="train-actions">
+              <button class="btn-check-results" onclick="checkTrainResults('maker')" data-testid="button-check-maker">
+                <i data-lucide="play" class="btn-svg"></i> Check Results
+              </button>
+              <button class="btn-finalize" onclick="finalizeStep(1)" id="btn-finalize-maker" disabled data-testid="button-finalize-maker">
+                <i data-lucide="check-circle-2" class="btn-svg"></i> Finalize Maker Prompt
+              </button>
+            </div>
+            <div class="results-panel" id="results-maker" style="display:none" data-testid="panel-results-maker">
+              <div class="results-header"><i data-lucide="terminal" class="results-icon"></i> Results</div>
+              <pre class="results-content" id="results-maker-content"></pre>
             </div>
           </div>
         </div>
-        <div class="card dash-card wide">
-          <h3>Audit Trail</h3>
-          <div class="audit-list" id="audit-list"></div>
+
+        <div class="train-section card locked" id="train-step-2">
+          <div class="card-header">
+            <i data-lucide="file-check" class="header-icon"></i>
+            <h2>Build Checker Prompt</h2>
+            <span class="step-badge">Step 2</span>
+            <span class="lock-badge" id="lock-badge-2"><i data-lucide="lock" class="lock-icon"></i> Finalize Maker first</span>
+          </div>
+          <div class="train-section-body">
+            <div class="form-group">
+              <label><i data-lucide="upload-cloud" class="label-icon"></i> Upload Checker File</label>
+              <div class="file-input-wrap" id="dropzone-train-checker" onclick="document.getElementById('train-checker-file').click()" data-testid="input-train-checker-file">
+                <i data-lucide="upload-cloud" class="file-upload-icon"></i>
+                <span class="file-placeholder">Choose PDF file or drag here</span>
+                <span class="file-name" id="train-checker-file-name"></span>
+                <input type="file" id="train-checker-file" accept=".pdf" hidden onchange="handleFileSelect(this, 'train-checker-file-name')">
+              </div>
+            </div>
+            <div class="form-group">
+              <label><i data-lucide="message-square" class="label-icon"></i> Checker Prompt</label>
+              <textarea id="train-checker-prompt" class="prompt-editor" placeholder="Enter the prompt to instruct the AI agent how to process Checker files..." data-testid="input-checker-prompt"></textarea>
+            </div>
+            <div class="train-actions">
+              <button class="btn-check-results" onclick="checkTrainResults('checker')" data-testid="button-check-checker">
+                <i data-lucide="play" class="btn-svg"></i> Check Results
+              </button>
+              <button class="btn-finalize" onclick="finalizeStep(2)" id="btn-finalize-checker" disabled data-testid="button-finalize-checker">
+                <i data-lucide="check-circle-2" class="btn-svg"></i> Finalize Checker Prompt
+              </button>
+            </div>
+            <div class="results-panel" id="results-checker" style="display:none" data-testid="panel-results-checker">
+              <div class="results-header"><i data-lucide="terminal" class="results-icon"></i> Results</div>
+              <pre class="results-content" id="results-checker-content"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="train-section card locked" id="train-step-3">
+          <div class="card-header">
+            <i data-lucide="git-compare" class="header-icon"></i>
+            <h2>Build Compare Prompt</h2>
+            <span class="step-badge">Step 3</span>
+            <span class="lock-badge" id="lock-badge-3"><i data-lucide="lock" class="lock-icon"></i> Finalize Checker first</span>
+          </div>
+          <div class="train-section-body">
+            <div class="form-group">
+              <label><i data-lucide="message-square" class="label-icon"></i> Compare Prompt</label>
+              <textarea id="train-compare-prompt" class="prompt-editor" placeholder="Enter the prompt to instruct the AI agent how to compare Maker and Checker results..." data-testid="input-compare-prompt"></textarea>
+            </div>
+            <div class="train-actions">
+              <button class="btn-check-results" onclick="checkTrainResults('compare')" data-testid="button-check-compare">
+                <i data-lucide="play" class="btn-svg"></i> Check Results
+              </button>
+              <button class="btn-finalize" onclick="finalizeStep(3)" id="btn-finalize-compare" disabled data-testid="button-finalize-compare">
+                <i data-lucide="check-circle-2" class="btn-svg"></i> Finalize Compare Prompt
+              </button>
+            </div>
+            <div class="results-panel" id="results-compare" style="display:none" data-testid="panel-results-compare">
+              <div class="results-header"><i data-lucide="terminal" class="results-icon"></i> Results</div>
+              <pre class="results-content" id="results-compare-content"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="train-section card locked" id="train-step-4">
+          <div class="card-header">
+            <i data-lucide="save" class="header-icon"></i>
+            <h2>Save Agent</h2>
+            <span class="step-badge">Step 4</span>
+            <span class="lock-badge" id="lock-badge-4"><i data-lucide="lock" class="lock-icon"></i> Finalize all prompts first</span>
+          </div>
+          <div class="train-section-body">
+            <div class="form-group">
+              <label><i data-lucide="bot" class="label-icon"></i> Agent Name</label>
+              <input type="text" id="train-agent-name" class="input-field" placeholder="Enter a unique agent name..." data-testid="input-agent-name">
+            </div>
+            <div class="agent-summary" id="agent-summary"></div>
+            <div class="train-actions">
+              <button class="btn-submit" onclick="saveAgent()" id="btn-save-agent" data-testid="button-save-agent">
+                <i data-lucide="save" class="btn-svg"></i> Save Agent
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="saved-agents-section card" id="saved-agents-section" style="display:none">
+          <div class="card-header">
+            <i data-lucide="users" class="header-icon"></i>
+            <h2>Saved Agents</h2>
+          </div>
+          <div class="saved-agents-list" id="saved-agents-list" data-testid="list-saved-agents"></div>
         </div>
       </div>
     </div>
