@@ -105,33 +105,6 @@ body {
 .view.active { display: block; animation: fadeIn 0.25s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-.stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-.stat-card {
-  display: flex; align-items: center; gap: 14px;
-  padding: 18px 20px;
-  background: var(--bg-white);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  transition: var(--transition);
-}
-.stat-card:hover { box-shadow: var(--shadow-md); }
-.stat-icon-wrap {
-  width: 42px; height: 42px; border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.stat-svg { width: 20px; height: 20px; }
-.stat-icon-total { background: var(--accent-light); color: var(--accent); }
-.stat-icon-total .stat-svg { color: var(--accent); }
-.stat-icon-completed { background: var(--success-light); color: var(--success); }
-.stat-icon-completed .stat-svg { color: var(--success); }
-.stat-icon-progress { background: var(--warning-light); color: var(--warning); }
-.stat-icon-progress .stat-svg { color: var(--warning); }
-.stat-icon-failed { background: var(--danger-light); color: var(--danger); }
-.stat-icon-failed .stat-svg { color: var(--danger); }
-.stat-content { display: flex; flex-direction: column; }
-.stat-value { font-size: 26px; font-weight: 700; line-height: 1; }
-.stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
 .launcher-grid { display: grid; grid-template-columns: 400px 1fr; gap: 20px; align-items: start; }
 @media (max-width: 1024px) { .launcher-grid { grid-template-columns: 1fr; } }

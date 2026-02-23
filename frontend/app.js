@@ -192,7 +192,7 @@ async function refreshWorkflows() {
     const res = await fetch(`${API_BASE}/api/workflows`);
     allWorkflows = await res.json();
     renderWorkflowList();
-    updateStats();
+
   } catch (err) {
     console.error('Refresh error:', err);
   }
@@ -290,23 +290,6 @@ function renderWorkflowList() {
   lucide.createIcons();
 }
 
-function updateStats() {
-  const total = allWorkflows.length;
-  const completed = allWorkflows.filter(w => w.status === 'COMPLETED').length;
-  const inProgress = allWorkflows.filter(w => !['COMPLETED', 'COMPLETED_WITH_FAILURE', 'FAILED'].includes(w.status)).length;
-  const failed = allWorkflows.filter(w => ['COMPLETED_WITH_FAILURE', 'FAILED'].includes(w.status)).length;
-
-  animateValue('stat-total-workflows', total);
-  animateValue('stat-completed', completed);
-  animateValue('stat-in-progress', inProgress);
-  animateValue('stat-failed', failed);
-}
-
-function animateValue(id, target) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.textContent = target;
-}
 
 async function loadEvents() {
   try {
