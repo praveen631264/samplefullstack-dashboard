@@ -5,11 +5,13 @@ import com.data.pipeline.service.AgentConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/agents")
+@Tag(name = "Agents", description = "AI Agent configuration management")
 public class AgentConfigController {
 
     @Autowired
