@@ -9,11 +9,11 @@
 # =============================================================
 
 # ---- CONFIGURATION (Update these with your values) ----
-EC2_IP="YOUR_EC2_PUBLIC_IP"
+EC2_IP="54.69.3.81"
 EC2_USER="ubuntu"
-SSH_KEY="path/to/your-key.pem"
+SSH_KEY="C:\Users\prave\OneDrive\Desktop\Finos\Aihackathon.pem"
 REMOTE_DIR="/home/ubuntu/app"
-DB_URL="postgresql://YOUR_DB_USER:YOUR_DB_PASSWORD@YOUR_RDS_ENDPOINT:5432/postgres"
+DB_URL="postgresql://aihackathon:aihackathon@aihackathondb.c96o0o2w623s.us-west-2.rds.amazonaws.com:5432/postgres"
 # ---- END CONFIGURATION ----
 
 set -e
@@ -24,8 +24,10 @@ echo "========================================="
 
 # Step 1: Build the app
 echo ""
-echo "[1/5] Building the application..."
-npm run build
+echo "[1/5] Building the Spring Boot application..."
+cd backend-spring
+mvn clean package -DskipTests
+cd ..
 echo "      Build complete."
 
 # Step 2: Create remote directory
@@ -36,39 +38,48 @@ ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$EC2_USER@$EC2_IP" "mkdir -p $REM
 # Step 3: Copy files to EC2
 echo ""
 echo "[3/5] Uploading files to EC2..."
-scp -i "$SSH_KEY" -o StrictHostKeyChecking=no -r dist/ "$EC2_USER@$EC2_IP:$REMOTE_DIR/"
-scp -i "$SSH_KEY" -o StrictHostKeyChecking=no package.json "$EC2_USER@$EC2_IP:$REMOTE_DIR/"
-scp -i "$SSH_KEY" -o StrictHostKeyChecking=no package-lock.json "$EC2_USER@$EC2_IP:$REMOTE_DIR/"
-scp -i "$SSH_KEY" -o StrictHostKeyChecking=no drizzle.config.ts "$EC2_USER@$EC2_IP:$REMOTE_DIR/"
+scp -i "$SSH_KEY" -o StrictHostKeyChecking=no backend-spring/target/*.jar "$EC2_USER@$EC2_IP:$REMOTE_DIR/app.jar"
+scp -i "$SSH_KEY" -o StrictHostKeyChecking=no -r frontend/ "$EC2_USER@$EC2_IP:$REMOTE_DIR/"
 echo "      Upload complete."
 
-# Step 4: Install dependencies on EC2
+# Step 4: Verification on EC2
 echo ""
-echo "[4/5] Installing dependencies on EC2..."
+echo "[4/5] Verifying environment on EC2..."
 ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$EC2_USER@$EC2_IP" << ENDSSH
 cd $REMOTE_DIR
-npm install --production
+java -version
 ENDSSH
-echo "      Dependencies installed."
+echo "      Verification complete."
 
-# Step 5: Start/restart the app with PM2
-echo ""
-echo "[5/5] Starting the application..."
+# Start the application on EC2
 ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$EC2_USER@$EC2_IP" << ENDSSH
 cd $REMOTE_DIR
-export DATABASE_URL="$DB_URL"
+
+# Map standard DB_URL to Spring Boot properties
+# Extract hostname from DB_URL for JDBC URL
+DB_HOST=$(echo $DB_URL | sed -e 's|.*@||' -e 's|:.*||')
+export SPRING_DATASOURCE_URL="jdbc:postgresql://$DB_HOST:5432/postgres"
+export SPRING_DATASOURCE_USERNAME="aihackathon"
+export SPRING_DATASOURCE_PASSWORD="aihackathon"
+export SPRING_DATASOURCE_DRIVER="org.postgresql.Driver"
+export SPRING_JPA_DIALECT="org.hibernate.dialect.PostgreSQLDialect"
 export NODE_ENV="production"
 
+# Stop Apache to free up port 80 if it's running
+sudo systemctl stop apache2 2>/dev/null || true
+sudo systemctl disable apache2 2>/dev/null || true
+
 # Stop existing app if running
-pm2 delete samplefullstack-api 2>/dev/null || true
+sudo pm2 delete test-orchestrator 2>/dev/null || true
 
-# Start the app with environment variables
-NODE_ENV=production DATABASE_URL="$DB_URL" pm2 start dist/index.cjs --name samplefullstack-api
-pm2 save
+# Start the Spring Boot app with sudo for port 80
+sudo pm2 start "/usr/bin/java -jar app.jar" --name test-orchestrator
 
-# Fix permissions for Apache
+sudo pm2 save
+
+# Fix permissions for server
 chmod 755 /home/ubuntu
-chmod -R 755 /home/ubuntu/app/dist/public
+chmod -R 755 /home/ubuntu/app/frontend
 
 echo ""
 echo "PM2 process status:"
