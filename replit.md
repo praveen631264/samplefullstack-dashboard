@@ -1,7 +1,7 @@
 # Test Orchestrator v2.0
 
 ## Overview
-A generic data processing orchestrator platform built with Spring Boot (Java) backend and vanilla HTML/CSS/JS frontend. Features workflow management, event processing with maker-checker patterns, BPMN process visualization, and n8n webhook integration.
+A generic data processing orchestrator platform built with Spring Boot (Java) backend and vanilla HTML/CSS/JS frontend. Features workflow management, event processing with maker-checker patterns, BPMN process visualization, agent training, and n8n webhook integration.
 
 ## Architecture
 - **Frontend**: Vanilla HTML + CSS + JavaScript (served as static files)
@@ -14,9 +14,9 @@ A generic data processing orchestrator platform built with Spring Boot (Java) ba
 ## Project Structure
 ```
 frontend/
-  index.html           - Main SPA with 4 views (Launcher, Events, Dashboard, BPMN)
+  index.html           - Main SPA with 4 views (Create Event, Events, Train Agents, BPMN)
   app.js               - Frontend application logic
-  styles.css           - Premium dark theme design system
+  styles.css           - Professional fintech-style white theme
   upload-test.html     - File upload test page
 
 src/main/java/com/data/pipeline/
@@ -26,31 +26,34 @@ src/main/java/com/data/pipeline/
     OpenAPIConfig.java              - Swagger/OpenAPI config
     WebConfig.java                  - CORS and web config
   controller/
+    AgentConfigController.java      - Agent training CRUD endpoints
     AuditController.java            - Audit trail endpoints
+    BpmnController.java             - BPMN XML serving endpoint
     SampleEventController.java      - Event CRUD endpoints
     WorkflowController.java         - Workflow management endpoints
   model/
+    AgentConfig.java                - Agent configuration entity
     AuditTrail.java                 - Audit entity
     SampleEvent.java                - Event entity
     WorkflowExecution.java          - Workflow execution entity
   repository/
+    AgentConfigRepository.java      - Agent JPA repository
     AuditTrailRepository.java       - Audit JPA repository
     SampleEventRepository.java      - Event JPA repository
     WorkflowExecutionRepository.java - Workflow JPA repository
   service/
+    AgentConfigService.java         - Agent configuration logic
     SampleEventService.java         - Event business logic
     WorkflowService.java            - Workflow orchestration + n8n integration
 
 src/main/resources/
   application.properties            - App configuration
   ca-event-processing.bpmn          - BPMN process definition
-
-n8n/
-  CA-Event-Processor-v2.json        - n8n workflow export
-  TestFluxNova.json                 - Test workflow export
-
-pom.xml                             - Maven project config
 ```
+
+## ID Formats
+- **Workflow ID**: EVT-DDMMYYYY-001 (sequential, resets daily)
+- **CA ID (Event ID)**: CA-DDMMYY-001 (sequential, resets daily)
 
 ## API Endpoints
 - `GET /api/workflows` - List all workflow executions
@@ -60,6 +63,10 @@ pom.xml                             - Maven project config
 - `GET /api/events` - List all events
 - `GET /api/events/{id}` - Get event by ID
 - `PUT /api/events/{id}` - Update event
+- `GET /api/agents` - List all agent configs
+- `POST /api/agents` - Create new agent config
+- `PUT /api/agents/{id}` - Update agent config
+- `DELETE /api/agents/{id}` - Delete agent config
 - `GET /api/audit` - Get audit trail
 - `GET /swagger-ui.html` - Swagger UI
 - `GET /h2-console` - H2 database console
@@ -67,7 +74,7 @@ pom.xml                             - Maven project config
 ## Database
 - Default: H2 file-based database (no setup required)
 - Production: PostgreSQL (configure via environment variables)
-- Tables: workflow_execution, sample_event, audit_trail
+- Tables: workflow_executions, sample_events, audit_trail, agent_configs
 
 ## Running
 ```bash

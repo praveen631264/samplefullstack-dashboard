@@ -14,6 +14,7 @@ function switchView(view) {
   document.querySelector(`[data-view="${view}"]`).classList.add('active');
   if (view === 'launcher' && submittedWorkflowId) pollSubmittedWorkflow();
   if (view === 'events') loadEvents();
+  if (view === 'train') loadSavedAgents();
   if (view === 'bpmn') renderBPMN();
   lucide.createIcons();
 }
@@ -651,6 +652,192 @@ function formatJSON(data) {
     const parsed = typeof data === 'string' ? JSON.parse(data) : data;
     return JSON.stringify(parsed, null, 2);
   } catch { return data; }
+}
+
+let trainState = { step: 1, makerFinalized: false, checkerFinalized: false, compareFinalized: false };
+
+function checkTrainResults(type) {
+  const promptEl = document.getElementById(`train-${type}-prompt`);
+  const prompt = promptEl ? promptEl.value.trim() : '';
+
+  if (!prompt) {
+    showToast('Please enter a prompt first', 'warning');
+    return;
+  }
+
+  if (type === 'maker') {
+    const fileInput = document.getElementById('train-maker-file');
+    if (!fileInput.files.length) { showToast('Please upload a Maker file', 'warning'); return; }
+  } else if (type === 'checker') {
+    const fileInput = document.getElementById('train-checker-file');
+    if (!fileInput.files.length) { showToast('Please upload a Checker file', 'warning'); return; }
+  }
+
+  const resultsPanel = document.getElementById(`results-${type}`);
+  const resultsContent = document.getElementById(`results-${type}-content`);
+  resultsPanel.style.display = 'block';
+  resultsContent.textContent = 'Processing... (n8n workflow URL not configured yet)\n\nPrompt submitted:\n' + prompt;
+
+  const finalizeBtn = document.getElementById(`btn-finalize-${type}`);
+  if (finalizeBtn) finalizeBtn.disabled = false;
+
+  showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} results check initiated`, 'info');
+  lucide.createIcons();
+}
+
+function finalizeStep(step) {
+  const stepNames = { 1: 'maker', 2: 'checker', 3: 'compare' };
+  const name = stepNames[step];
+
+  trainState[`${name}Finalized`] = true;
+
+  const section = document.getElementById(`train-step-${step}`);
+  section.classList.add('finalized');
+
+  const prompt = document.getElementById(`train-${name}-prompt`);
+  if (prompt) prompt.disabled = true;
+
+  const indicator = document.getElementById(`step-indicator-${step}`);
+  indicator.classList.remove('active');
+  indicator.classList.add('done');
+
+  const nextStep = step + 1;
+  if (nextStep <= 4) {
+    const nextSection = document.getElementById(`train-step-${nextStep}`);
+    nextSection.classList.remove('locked');
+    const lockBadge = document.getElementById(`lock-badge-${nextStep}`);
+    if (lockBadge) lockBadge.style.display = 'none';
+    const nextIndicator = document.getElementById(`step-indicator-${nextStep}`);
+    nextIndicator.classList.add('active');
+  }
+
+  if (step === 3) {
+    renderAgentSummary();
+  }
+
+  showToast(`${name.charAt(0).toUpperCase() + name.slice(1)} prompt finalized`, 'success');
+  lucide.createIcons();
+}
+
+function renderAgentSummary() {
+  const makerPrompt = document.getElementById('train-maker-prompt').value.trim();
+  const checkerPrompt = document.getElementById('train-checker-prompt').value.trim();
+  const comparePrompt = document.getElementById('train-compare-prompt').value.trim();
+
+  const summary = document.getElementById('agent-summary');
+  summary.innerHTML = `
+    <div class="agent-summary-row"><span class="agent-summary-label">Maker Prompt</span><span class="agent-summary-value">${makerPrompt.substring(0, 80)}${makerPrompt.length > 80 ? '...' : ''}</span></div>
+    <div class="agent-summary-row"><span class="agent-summary-label">Checker Prompt</span><span class="agent-summary-value">${checkerPrompt.substring(0, 80)}${checkerPrompt.length > 80 ? '...' : ''}</span></div>
+    <div class="agent-summary-row"><span class="agent-summary-label">Compare Prompt</span><span class="agent-summary-value">${comparePrompt.substring(0, 80)}${comparePrompt.length > 80 ? '...' : ''}</span></div>
+  `;
+}
+
+async function saveAgent() {
+  const agentName = document.getElementById('train-agent-name').value.trim();
+  if (!agentName) { showToast('Please enter an agent name', 'warning'); return; }
+
+  const payload = {
+    agentName: agentName,
+    makerPrompt: document.getElementById('train-maker-prompt').value.trim(),
+    checkerPrompt: document.getElementById('train-checker-prompt').value.trim(),
+    comparePrompt: document.getElementById('train-compare-prompt').value.trim()
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/api/agents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || 'Failed to save agent', 'error');
+      return;
+    }
+    showToast(`Agent "${agentName}" saved successfully`, 'success');
+    loadSavedAgents();
+    resetTrainForm();
+  } catch (err) {
+    console.error('Save agent error:', err);
+    showToast('Error saving agent', 'error');
+  }
+}
+
+function resetTrainForm() {
+  trainState = { step: 1, makerFinalized: false, checkerFinalized: false, compareFinalized: false };
+
+  ['train-maker-prompt', 'train-checker-prompt', 'train-compare-prompt'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = '';
+    el.disabled = false;
+  });
+  document.getElementById('train-agent-name').value = '';
+  document.getElementById('agent-summary').innerHTML = '';
+  ['results-maker', 'results-checker', 'results-compare'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+
+  ['train-maker-file', 'train-checker-file'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  ['train-maker-file-name', 'train-checker-file-name'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = '';
+    el.classList.remove('visible');
+  });
+  document.querySelectorAll('#view-train .file-input-wrap').forEach(z => z.classList.remove('has-file'));
+
+  ['btn-finalize-maker', 'btn-finalize-checker', 'btn-finalize-compare'].forEach(id => {
+    document.getElementById(id).disabled = true;
+  });
+
+  for (let i = 1; i <= 4; i++) {
+    const section = document.getElementById(`train-step-${i}`);
+    section.classList.remove('finalized');
+    if (i > 1) section.classList.add('locked');
+
+    const indicator = document.getElementById(`step-indicator-${i}`);
+    indicator.classList.remove('active', 'done');
+    if (i === 1) indicator.classList.add('active');
+
+    const lockBadge = document.getElementById(`lock-badge-${i}`);
+    if (lockBadge) lockBadge.style.display = '';
+  }
+
+  lucide.createIcons();
+}
+
+async function loadSavedAgents() {
+  try {
+    const res = await fetch(`${API_BASE}/api/agents`);
+    const agents = await res.json();
+    const section = document.getElementById('saved-agents-section');
+    const list = document.getElementById('saved-agents-list');
+
+    if (agents.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+    list.innerHTML = agents.map(a => `
+      <div class="saved-agent-item" data-testid="agent-item-${a.id}">
+        <div class="saved-agent-icon"><i data-lucide="bot"></i></div>
+        <div class="saved-agent-info">
+          <div class="saved-agent-name">${a.agentName}</div>
+          <div class="saved-agent-meta">Created ${formatDetailedTime(a.createdAt)}</div>
+        </div>
+        <div class="saved-agent-badges">
+          <span class="step-badge">Maker</span>
+          <span class="step-badge">Checker</span>
+          <span class="step-badge">Compare</span>
+        </div>
+      </div>
+    `).join('');
+    lucide.createIcons();
+  } catch (err) {
+    console.error('Load agents error:', err);
+  }
 }
 
 function showToast(message, type = 'info') {
