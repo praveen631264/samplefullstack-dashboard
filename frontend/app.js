@@ -192,6 +192,16 @@ function renderSubmittedCard(wf) {
   const isFailed = wf.status === 'FAILED' || wf.status === 'COMPLETED_WITH_FAILURE';
   const statusClass = isComplete ? 'status-completed' : isFailed ? 'status-failed' : 'status-progress';
 
+  const caIdRow = wf.eventId ? `
+      <div class="submitted-info-row">
+        <span class="submitted-label">CA ID</span>
+        <span class="submitted-value">
+          <a href="#" class="caid-link" onclick="navigateToEvent('${wf.eventId}'); return false;" data-testid="link-caid-${wf.eventId}">
+            <i data-lucide="external-link" class="caid-link-icon"></i> ${wf.eventId}
+          </a>
+        </span>
+      </div>` : '';
+
   card.innerHTML = `
     <div class="card-header">
       <i data-lucide="activity" class="header-icon"></i>
@@ -221,6 +231,7 @@ function renderSubmittedCard(wf) {
           ${statusLabel}
         </span>
       </div>
+      ${caIdRow}
       ${buildProgressBar(wf)}
     </div>
   `;
@@ -385,7 +396,7 @@ function renderEventsTable() {
   if (activeIcon) activeIcon.textContent = eventSort.dir === 'desc' ? ' \u2193' : ' \u2191';
 
   if (!allEvents.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">No events found</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted)">No events found</td></tr>';
     return;
   }
 
@@ -401,7 +412,6 @@ function renderEventsTable() {
       <td>${ev.payableDate || '-'}</td>
       <td><span class="status-badge status-${ev.status?.replace(/\s/g, '-')}">${ev.status}</span></td>
       <td style="font-size:11px;color:var(--text-muted)">${formatDetailedTime(ev.createdAt)}</td>
-      <td>${ev.confidenceScore ? `${(ev.confidenceScore * 100).toFixed(0)}%` : '-'}</td>
       <td><button class="btn-view" onclick="viewEventDetail('${ev.eventId}')" data-testid="button-view-event-${ev.eventId}">View</button></td>
     </tr>
   `).join('');
@@ -453,7 +463,6 @@ async function viewEventDetail(eventId) {
         <div class="detail-item"><div class="detail-label">Premium Rate</div><div class="detail-value">${ev.premiumRate?.toFixed(2) || '-'}</div></div>
         <div class="detail-item"><div class="detail-label">Security Called Amount</div><div class="detail-value">${ev.securityCalledAmount?.toLocaleString() || '-'}</div></div>
         <div class="detail-item"><div class="detail-label">Payable Date</div><div class="detail-value">${ev.payableDate || '-'}</div></div>
-        <div class="detail-item"><div class="detail-label">Confidence Score</div><div class="detail-value">${ev.confidenceScore ? `${(ev.confidenceScore * 100).toFixed(0)}%` : '-'}</div></div>
         <div class="detail-item full-width"><div class="detail-label">Remarks</div><div class="detail-value">${ev.remarks || 'None'}</div></div>
       </div>
       ${ev.source1Data || ev.source2Data ? `
@@ -474,6 +483,11 @@ function viewWorkflowEvent(eventId, workflowId) {
     switchView('events');
     setTimeout(() => viewEventDetail(eventId), 300);
   }
+}
+
+function navigateToEvent(eventId) {
+  switchView('events');
+  setTimeout(() => viewEventDetail(eventId), 300);
 }
 
 function closeModal() {

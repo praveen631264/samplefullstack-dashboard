@@ -118,6 +118,9 @@ body {
 .submitted-status.status-failed { background: var(--danger-light); color: var(--danger); }
 .submitted-status.status-progress { background: var(--warning-light); color: var(--warning); }
 .status-icon-sm { width: 14px; height: 14px; }
+.caid-link { color: var(--accent); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: var(--transition); }
+.caid-link:hover { text-decoration: underline; opacity: 0.85; }
+.caid-link-icon { width: 13px; height: 13px; }
 
 .card-header {
   display: flex; align-items: center; gap: 10px;
