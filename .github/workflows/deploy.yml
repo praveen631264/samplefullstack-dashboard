@@ -67,6 +67,6 @@ jobs:
                SPRING_DATASOURCE_DRIVER="org.postgresql.Driver" \
                SPRING_JPA_DIALECT="org.hibernate.dialect.PostgreSQLDialect" \
                NODE_ENV="production" \
-               pm2 start "/usr/bin/java -jar app.jar" --name test-orchestrator
+               pm2 start /usr/bin/java --name test-orchestrator -- -jar app.jar
 
           sudo pm2 save
