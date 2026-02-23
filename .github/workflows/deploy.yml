@@ -60,13 +60,20 @@ jobs:
           # Map standard DB_URL to Spring Boot properties
           DB_URL="${{ secrets.DATABASE_URL }}"
           DB_HOST=$(echo $DB_URL | sed -e 's|.*@||' -e 's|:.*||')
-          
+
           sudo SPRING_DATASOURCE_URL="jdbc:postgresql://$DB_HOST:5432/postgres" \
                SPRING_DATASOURCE_USERNAME="aihackathon" \
                SPRING_DATASOURCE_PASSWORD="aihackathon" \
                SPRING_DATASOURCE_DRIVER="org.postgresql.Driver" \
                SPRING_JPA_DIALECT="org.hibernate.dialect.PostgreSQLDialect" \
                NODE_ENV="production" \
-               pm2 start /usr/bin/java --name test-orchestrator -- -jar app.jar
+               pm2 start "java -jar app.jar" --name test-orchestrator
 
+          # Diagnostics
+          sleep 10
+          sudo pm2 status
+          sudo pm2 logs test-orchestrator --lines 50 --no-daemon &
+          sleep 5
+          sudo pkill -f "pm2 logs" || true
+          
           sudo pm2 save
