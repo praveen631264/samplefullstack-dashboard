@@ -69,11 +69,5 @@ jobs:
                NODE_ENV="production" \
                pm2 start "java -jar app.jar" --name test-orchestrator
 
-          # Diagnostics
-          sleep 10
-          sudo pm2 status
-          sudo pm2 logs test-orchestrator --lines 50 --no-daemon &
-          sleep 5
-          sudo pkill -f "pm2 logs" || true
-          
+
           sudo pm2 save
