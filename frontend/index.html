@@ -32,6 +32,9 @@
         <button class="nav-tab" data-view="events" onclick="switchView('events')" data-testid="tab-events">
           <i data-lucide="clipboard-list" class="tab-svg"></i> Event Manager
         </button>
+        <button class="nav-tab" data-view="train" onclick="switchView('train')" data-testid="tab-train">
+          <i data-lucide="brain" class="tab-svg"></i> Train my Agents
+        </button>
         <button class="nav-tab" data-view="bpmn" onclick="switchView('bpmn')" data-testid="tab-bpmn">
           <i data-lucide="git-branch" class="tab-svg"></i> Process Viewer
         </button>
@@ -127,6 +130,14 @@
           </thead>
           <tbody id="events-tbody"></tbody>
         </table>
+      </div>
+    </div>
+
+    <div class="view" id="view-train">
+      <div class="wip-container">
+        <div class="wip-icon-wrap"><i data-lucide="hard-hat" class="wip-icon"></i></div>
+        <h2 class="wip-title">Work in Progress</h2>
+        <p class="wip-text">The Train my Agents feature is currently under development. Stay tuned for updates.</p>
       </div>
     </div>
 
