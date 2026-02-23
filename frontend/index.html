@@ -32,9 +32,6 @@
         <button class="nav-tab" data-view="events" onclick="switchView('events')" data-testid="tab-events">
           <i data-lucide="clipboard-list" class="tab-svg"></i> Event Manager
         </button>
-        <button class="nav-tab" data-view="dashboard" onclick="switchView('dashboard')" data-testid="tab-dashboard">
-          <i data-lucide="bar-chart-3" class="tab-svg"></i> Dashboard
-        </button>
         <button class="nav-tab" data-view="bpmn" onclick="switchView('bpmn')" data-testid="tab-bpmn">
           <i data-lucide="git-branch" class="tab-svg"></i> Process Viewer
         </button>
@@ -130,33 +127,6 @@
           </thead>
           <tbody id="events-tbody"></tbody>
         </table>
-      </div>
-    </div>
-
-    <div class="view" id="view-dashboard">
-      <div class="card-header" style="margin-bottom:20px">
-        <i data-lucide="bar-chart-3" class="header-icon"></i>
-        <h2>Analytics Dashboard</h2>
-      </div>
-      <div class="dashboard-grid">
-        <div class="card dash-card">
-          <h3>Events by Type</h3>
-          <div class="chart-container" id="chart-by-type"></div>
-        </div>
-        <div class="card dash-card">
-          <h3>Verification Rate</h3>
-          <div class="chart-container" id="chart-verification">
-            <div class="gauge-wrapper">
-              <div class="gauge" id="verification-gauge">
-                <div class="gauge-value" id="gauge-value">0%</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card dash-card wide">
-          <h3>Audit Trail</h3>
-          <div class="audit-list" id="audit-list"></div>
-        </div>
       </div>
     </div>
 

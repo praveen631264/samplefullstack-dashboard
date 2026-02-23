@@ -14,7 +14,6 @@ function switchView(view) {
   document.querySelector(`[data-view="${view}"]`).classList.add('active');
   if (view === 'launcher' && submittedWorkflowId) pollSubmittedWorkflow();
   if (view === 'events') loadEvents();
-  if (view === 'dashboard') loadDashboard();
   if (view === 'bpmn') renderBPMN();
   lucide.createIcons();
 }
@@ -494,73 +493,6 @@ function closeModal() {
   document.getElementById('event-modal').classList.remove('active');
 }
 
-async function loadDashboard() {
-  try {
-    const [statsRes, auditRes] = await Promise.all([
-      fetch(`${API_BASE}/api/stats`),
-      fetch(`${API_BASE}/api/audit`)
-    ]);
-    const stats = await statsRes.json();
-    const audits = await auditRes.json();
-    renderTypeChart(stats.byType);
-    renderVerificationGauge(stats.byStatus);
-    renderAuditTrail(audits);
-  } catch (err) {
-    console.error('Dashboard error:', err);
-  }
-}
-
-function renderTypeChart(byType) {
-  const container = document.getElementById('chart-by-type');
-  if (!byType || !byType.length) {
-    container.innerHTML = '<div class="empty-state"><p>No data yet</p></div>';
-    return;
-  }
-  const max = Math.max(...byType.map(t => t.count));
-  const colors = { 'Full Call': '#dc2626', 'Partial Call': '#d97706', 'Redemption': '#2563eb', 'Reorg': '#7c3aed' };
-  container.innerHTML = `<div class="chart-bar-group">${byType.map(t => `
-    <div class="chart-bar-item">
-      <div class="chart-bar-label">${t.event_type}</div>
-      <div class="chart-bar-track">
-        <div class="chart-bar-fill" style="width:${(t.count / max * 100)}%;background:${colors[t.event_type] || '#4f46e5'}">${t.count}</div>
-      </div>
-    </div>
-  `).join('')}</div>`;
-}
-
-function renderVerificationGauge(byStatus) {
-  if (!byStatus || !byStatus.length) return;
-  const total = byStatus.reduce((s, b) => s + b.count, 0);
-  const verified = byStatus.find(b => b.status === 'Verified')?.count || 0;
-  const pct = total > 0 ? Math.round((verified / total) * 100) : 0;
-  const gauge = document.querySelector('.gauge');
-  if (gauge) gauge.style.background = `conic-gradient(var(--success) ${pct * 3.6}deg, var(--bg-body) ${pct * 3.6}deg)`;
-  const value = document.getElementById('gauge-value');
-  if (value) value.textContent = `${pct}%`;
-}
-
-function renderAuditTrail(audits) {
-  const container = document.getElementById('audit-list');
-  if (!audits || !audits.length) {
-    container.innerHTML = '<div class="empty-state"><p>No audit entries yet</p></div>';
-    return;
-  }
-  const actionColors = {
-    'WORKFLOW_CREATED': '#2563eb', 'N8N_TRIGGERED': '#4f46e5',
-    'STATUS_PARSING': '#d97706', 'STATUS_EVENT_CREATED': '#059669',
-    'STATUS_VERIFYING': '#7c3aed', 'STATUS_COMPLETED': '#059669',
-    'EVENT_CREATED': '#059669', 'EVENT_UPDATED': '#4f46e5',
-    'STATUS_FAILED': '#dc2626', 'N8N_TRIGGER_FAILED': '#dc2626'
-  };
-  container.innerHTML = audits.slice(0, 30).map(a => `
-    <div class="audit-item">
-      <div class="audit-dot" style="background:${actionColors[a.action] || '#94a3b8'}"></div>
-      <div class="audit-action">${a.action}</div>
-      <div class="audit-details">${a.details || ''}</div>
-      <div class="audit-time">${timeAgo(a.createdAt)}</div>
-    </div>
-  `).join('');
-}
 
 let bpmnViewer = null;
 
