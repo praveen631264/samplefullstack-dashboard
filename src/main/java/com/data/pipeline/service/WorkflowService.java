@@ -21,7 +21,7 @@ public class WorkflowService {
     private AuditTrailRepository auditRepository;
 
     public List<WorkflowExecution> getAllWorkflows() {
-        return workflowRepository.findAll();
+        return workflowRepository.findAllByOrderByCreatedAtDesc();
     }
 
     public WorkflowExecution createWorkflow(String description, String s1Name, String s2Name) {

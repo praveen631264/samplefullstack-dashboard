@@ -172,6 +172,7 @@ function submitToN8nViaForm(source1Input, source2Input, workflowId, description)
 }
 
 let workflowSort = { field: 'createdAt', dir: 'desc' };
+
 let eventSort = { field: 'createdAt', dir: 'desc' };
 
 function performSort(array, sortKey, direction) {
