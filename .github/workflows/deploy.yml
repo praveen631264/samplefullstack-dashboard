@@ -2,76 +2,72 @@ name: Deploy to AWS EC2
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
 
-      - name: Install dependencies
-        run: npm ci
+    - name: Build with Maven
+      run: |
+        cd backend-spring
+        mvn clean package -DskipTests
 
-      - name: Build application
-        run: npm run build
+    - name: Copy Files to EC2
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        source: "backend-spring/target/*.jar,frontend/,deploy.sh"
+        target: "/home/ubuntu/app"
+        strip_components: 0
 
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
-
-      - name: Upload files to EC2
-        run: |
-          SSH_CMD="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no"
-          SCP_CMD="scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no"
-
-          # Create remote directory
-          $SSH_CMD ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "mkdir -p /home/${{ secrets.EC2_USER }}/app"
-
-          # Upload built files
-          $SCP_CMD -r dist/ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/app/
-          $SCP_CMD package.json ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/app/
-          $SCP_CMD package-lock.json ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/app/
-
-      - name: Deploy and restart application
-        env:
-          DEPLOY_DB_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          SSH_CMD="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no"
-
-          $SSH_CMD ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "bash -s" <<ENDSSH
-          cd /home/\$USER/app
-
-          # Install production dependencies
-          npm install --production
+    - name: Execute Remote SSH Commands
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          cd /home/ubuntu/app
+          
+          # Rename JAR for consistency
+          mv backend-spring/target/*.jar ./app.jar
+          
+          # Clean up temporary upload structure
+          rm -rf backend-spring
+          
+          # Stop Apache to free up port 80 if it's running
+          sudo systemctl stop apache2 2>/dev/null || true
+          sudo systemctl disable apache2 2>/dev/null || true
 
           # Stop existing app if running
-          pm2 delete samplefullstack-api 2>/dev/null || true
+          sudo pm2 delete test-orchestrator 2>/dev/null || true
 
-          # Start app with environment variables
-          NODE_ENV=production DATABASE_URL='${DEPLOY_DB_URL}' pm2 start dist/index.cjs --name samplefullstack-api
-          pm2 save
+          # Start the Spring Boot app with sudo for port 80
+          # Map standard DB_URL to Spring Boot properties
+          DB_URL="${{ secrets.DATABASE_URL }}"
+          DB_HOST=$(echo $DB_URL | sed -e 's|.*@||' -e 's|:.*||')
+          
+          sudo SPRING_DATASOURCE_URL="jdbc:postgresql://$DB_HOST:5432/postgres" \
+               SPRING_DATASOURCE_USERNAME="aihackathon" \
+               SPRING_DATASOURCE_PASSWORD="aihackathon" \
+               SPRING_DATASOURCE_DRIVER="org.postgresql.Driver" \
+               SPRING_JPA_DIALECT="org.hibernate.dialect.PostgreSQLDialect" \
+               NODE_ENV="production" \
+               pm2 start "/usr/bin/java -jar app.jar" --name test-orchestrator
 
-          # Fix permissions for Apache
-          chmod 755 /home/\$USER
-          chmod -R 755 /home/\$USER/app/dist/public
-
-          echo "Deployment complete!"
-          pm2 list
-          ENDSSH
-
-      - name: Cleanup SSH key
-        if: always()
-        run: rm -f ~/.ssh/deploy_key
+          sudo pm2 save
