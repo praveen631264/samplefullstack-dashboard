@@ -31,6 +31,9 @@ public class SampleEventController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Autowired
+    private com.data.pipeline.service.WorkflowService workflowService;
+
     @PostMapping
     public SampleEvent createEvent(@RequestBody SampleEvent event) {
         if (event.getEventId() == null || event.getEventId().isEmpty()) {
@@ -39,7 +42,12 @@ public class SampleEventController {
         if (event.getCreatedAt() == null) {
             event.setCreatedAt(java.time.LocalDateTime.now());
         }
-        return eventService.saveEvent(event);
+        SampleEvent saved = eventService.saveEvent(event);
+        if (saved.getWorkflowId() != null && !saved.getWorkflowId().isEmpty()) {
+            workflowService.updateStatus(saved.getWorkflowId(), "EVENT_CREATED",
+                    saved.getEventType(), saved.getCusip(), saved.getEventId());
+        }
+        return saved;
     }
 
     @PutMapping("/{eventId}")

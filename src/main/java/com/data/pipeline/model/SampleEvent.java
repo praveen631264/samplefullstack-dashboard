@@ -59,6 +59,9 @@ public class SampleEvent {
     @Column(name = "source2_data", columnDefinition = "TEXT")
     private String source2Data;
 
+    @Column(name = "workflow_id")
+    private String workflowId;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 }
