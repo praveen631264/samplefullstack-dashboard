@@ -40,9 +40,16 @@ public class WorkflowService {
     }
 
     public Optional<WorkflowExecution> updateStatus(String workflowId, String status) {
+        return updateStatus(workflowId, status, null, null, null);
+    }
+
+    public Optional<WorkflowExecution> updateStatus(String workflowId, String status, String eventType, String cusip, String eventId) {
         return workflowRepository.findById(workflowId).map(wf -> {
             wf.setStatus(status);
             wf.setUpdatedAt(LocalDateTime.now());
+            if (eventType != null) wf.setEventType(eventType);
+            if (cusip != null) wf.setCusip(cusip);
+            if (eventId != null) wf.setEventId(eventId);
             logAudit(workflowId, "STATUS_" + status, "Status updated to " + status);
             return workflowRepository.save(wf);
         });

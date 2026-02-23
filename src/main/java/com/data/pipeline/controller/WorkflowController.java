@@ -42,7 +42,10 @@ public class WorkflowController {
             @RequestBody Map<String, String> body) {
 
         String status = body.get("status");
-        return workflowService.updateStatus(workflowId, status)
+        String eventType = body.get("eventType");
+        String cusip = body.get("cusip");
+        String eventId = body.get("eventId");
+        return workflowService.updateStatus(workflowId, status, eventType, cusip, eventId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

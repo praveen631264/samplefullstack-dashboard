@@ -33,6 +33,12 @@ public class SampleEventController {
 
     @PostMapping
     public SampleEvent createEvent(@RequestBody SampleEvent event) {
+        if (event.getEventId() == null || event.getEventId().isEmpty()) {
+            event.setEventId(java.util.UUID.randomUUID().toString());
+        }
+        if (event.getCreatedAt() == null) {
+            event.setCreatedAt(java.time.LocalDateTime.now());
+        }
         return eventService.saveEvent(event);
     }
 
