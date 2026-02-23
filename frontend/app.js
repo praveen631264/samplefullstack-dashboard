@@ -654,35 +654,106 @@ function formatJSON(data) {
   } catch { return data; }
 }
 
-let trainState = { step: 1, makerFinalized: false, checkerFinalized: false, compareFinalized: false };
+let trainState = { 
+  sessionId: '',
+  step: 1, 
+  makerFinalized: false, 
+  checkerFinalized: false, 
+  compareFinalized: false 
+};
 
-function checkTrainResults(type) {
+async function checkTrainResults(type) {
+  const sessionIdInput = document.getElementById('train-session-id');
+  const sessionId = sessionIdInput.value.trim();
   const promptEl = document.getElementById(`train-${type}-prompt`);
   const prompt = promptEl ? promptEl.value.trim() : '';
+
+  if (!sessionId) {
+    showToast('Please enter a Unique ID first', 'warning');
+    return;
+  }
+  trainState.sessionId = sessionId;
 
   if (!prompt) {
     showToast('Please enter a prompt first', 'warning');
     return;
   }
 
+  let file = null;
   if (type === 'maker') {
     const fileInput = document.getElementById('train-maker-file');
     if (!fileInput.files.length) { showToast('Please upload a Maker file', 'warning'); return; }
+    file = fileInput.files[0];
   } else if (type === 'checker') {
     const fileInput = document.getElementById('train-checker-file');
     if (!fileInput.files.length) { showToast('Please upload a Checker file', 'warning'); return; }
+    file = fileInput.files[0];
   }
 
   const resultsPanel = document.getElementById(`results-${type}`);
   const resultsContent = document.getElementById(`results-${type}-content`);
   resultsPanel.style.display = 'block';
-  resultsContent.textContent = 'Processing... (n8n workflow URL not configured yet)\n\nPrompt submitted:\n' + prompt;
-
-  const finalizeBtn = document.getElementById(`btn-finalize-${type}`);
-  if (finalizeBtn) finalizeBtn.disabled = false;
-
-  showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} results check initiated`, 'info');
+  resultsContent.innerHTML = '<div class="loading-results"><i data-lucide="loader" class="spin"></i> Processing with AI Agent...</div>';
   lucide.createIcons();
+
+  try {
+    const formData = new FormData();
+    formData.append('sessionId', sessionId);
+    formData.append('type', type);
+    formData.append('prompt', prompt);
+    if (file) formData.append('file', file);
+
+    const res = await fetch(`${API_BASE}/api/training/check`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) throw new Error('Failed to initiate training');
+
+    showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} check initiated. Waiting for AI...`, 'info');
+    
+    // Start polling for results
+    pollTrainingResults(sessionId, type);
+
+  } catch (err) {
+    console.error('Training error:', err);
+    resultsContent.textContent = 'Error: ' + err.message;
+    showToast('Error: ' + err.message, 'error');
+  }
+}
+
+function pollTrainingResults(sessionId, type) {
+  const resultsContent = document.getElementById(`results-${type}-content`);
+  const finalizeBtn = document.getElementById(`btn-finalize-${type}`);
+  
+  const pollInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/training/session/${sessionId}`);
+      const session = await res.json();
+      
+      let result = null;
+      if (type === 'maker') result = session.makerResult;
+      else if (type === 'checker') result = session.checkerResult;
+      else if (type === 'compare') result = session.compareResult;
+
+      if (result) {
+        clearInterval(pollInterval);
+        resultsContent.textContent = formatJSON(result);
+        if (finalizeBtn) finalizeBtn.disabled = false;
+        showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} results ready!`, 'success');
+      }
+    } catch (err) {
+      console.error('Polling error:', err);
+    }
+  }, 3000);
+  
+  // Timeout after 60 seconds
+  setTimeout(() => {
+    clearInterval(pollInterval);
+    if (resultsContent.textContent.includes('Processing')) {
+      resultsContent.textContent = 'Time out waiting for results. Please try again.';
+    }
+  }, 60000);
 }
 
 function finalizeStep(step) {
