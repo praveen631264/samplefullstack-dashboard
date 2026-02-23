@@ -78,7 +78,7 @@ async function submitWorkflow(e) {
     const workflow = await res.json();
     const workflowId = workflow.workflowId;
 
-    showToast(`Submission accepted. Your workflow ID: ${workflowId.substring(0, 12)}...`, 'success');
+    showToast(`Submission accepted. Your workflow ID: ${workflowId}`, 'success');
 
     submittedWorkflowId = workflowId;
     showSubmittedCard(workflow);
@@ -200,7 +200,7 @@ function renderSubmittedCard(wf) {
     <div class="submitted-card-body">
       <div class="submitted-info-row">
         <span class="submitted-label">Workflow ID</span>
-        <span class="submitted-value" data-testid="text-submitted-id">${wf.workflowId.substring(0, 16)}...</span>
+        <span class="submitted-value" data-testid="text-submitted-id">${wf.workflowId}</span>
       </div>
       <div class="submitted-info-row">
         <span class="submitted-label">Description</span>
