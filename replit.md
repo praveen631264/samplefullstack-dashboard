@@ -1,162 +1,83 @@
-# SampleFullstack Dashboard App
+# Test Orchestrator v2.0
 
 ## Overview
-A full-stack dashboard application built with React frontend and Express/Node.js backend, connected to a PostgreSQL database. The dashboard displays real-time metrics, revenue charts, order analytics, product management, and activity logs.
+A generic data processing orchestrator platform built with Spring Boot (Java) backend and vanilla HTML/CSS/JS frontend. Features workflow management, event processing with maker-checker patterns, BPMN process visualization, and n8n webhook integration.
 
 ## Architecture
-- **Frontend**: React + TypeScript + Tailwind CSS + shadcn/ui components
-- **Backend**: Express.js (Node.js) REST API
-- **Database**: PostgreSQL (via Drizzle ORM)
-- **Routing**: wouter (frontend), Express router (backend)
-- **Charts**: Recharts
-- **State Management**: TanStack React Query
+- **Frontend**: Vanilla HTML + CSS + JavaScript (served as static files)
+- **Backend**: Spring Boot 3.2.0 (Java 17+) REST API
+- **Database**: H2 (default/dev), PostgreSQL (production)
+- **ORM**: Spring Data JPA / Hibernate
+- **API Docs**: SpringDoc OpenAPI / Swagger UI
+- **Workflow Engine**: n8n webhook integration
 
 ## Project Structure
 ```
-client/src/
-  App.tsx              - Main app with sidebar layout
-  components/
-    app-sidebar.tsx    - Navigation sidebar
-    theme-provider.tsx - Light/dark theme context
-    theme-toggle.tsx   - Theme toggle button
-    stats-card.tsx     - Metric stat card component
-    revenue-chart.tsx  - Revenue area chart
-    orders-chart.tsx   - Orders bar chart by status
-    recent-activity.tsx - Recent activity feed
-    top-products.tsx   - Top products table
-  pages/
-    dashboard.tsx      - Main dashboard view
-    products.tsx       - Products list page
-    orders.tsx         - Orders list page
-    activity.tsx       - Activity log page
+frontend/
+  index.html           - Main SPA with 4 views (Launcher, Events, Dashboard, BPMN)
+  app.js               - Frontend application logic
+  styles.css           - Premium dark theme design system
+  upload-test.html     - File upload test page
 
-server/
-  index.ts             - Express server entry
-  db.ts                - Database connection (pg + Drizzle)
-  routes.ts            - API route handlers
-  storage.ts           - Database storage layer (IStorage interface)
-  seed.ts              - Database seed data
+src/main/java/com/data/pipeline/
+  DataPipelineApplication.java      - Spring Boot entry point
+  config/
+    DataInitializer.java            - Sample data seeder
+    OpenAPIConfig.java              - Swagger/OpenAPI config
+    WebConfig.java                  - CORS and web config
+  controller/
+    AuditController.java            - Audit trail endpoints
+    SampleEventController.java      - Event CRUD endpoints
+    WorkflowController.java         - Workflow management endpoints
+  model/
+    AuditTrail.java                 - Audit entity
+    SampleEvent.java                - Event entity
+    WorkflowExecution.java          - Workflow execution entity
+  repository/
+    AuditTrailRepository.java       - Audit JPA repository
+    SampleEventRepository.java      - Event JPA repository
+    WorkflowExecutionRepository.java - Workflow JPA repository
+  service/
+    SampleEventService.java         - Event business logic
+    WorkflowService.java            - Workflow orchestration + n8n integration
 
-shared/
-  schema.ts            - Drizzle schema + TypeScript types
+src/main/resources/
+  application.properties            - App configuration
+  ca-event-processing.bpmn          - BPMN process definition
+
+n8n/
+  CA-Event-Processor-v2.json        - n8n workflow export
+  TestFluxNova.json                 - Test workflow export
+
+pom.xml                             - Maven project config
 ```
 
 ## API Endpoints
-- `GET /api/health` - Health check
-- `GET /api/dashboard/metrics` - Dashboard summary metrics
-- `GET /api/dashboard/revenue` - Revenue by month
-- `GET /api/dashboard/orders-by-status` - Order count by status
-- `GET /api/dashboard/top-products` - Top selling products
-- `GET /api/products` - List all products
-- `POST /api/products` - Create product
-- `GET /api/orders` - List all orders
-- `POST /api/orders` - Create order
-- `GET /api/activities` - Recent activity log
+- `GET /api/workflows` - List all workflow executions
+- `POST /api/workflows` - Create new workflow (multipart file upload)
+- `GET /api/workflows/{id}` - Get workflow by ID
+- `PUT /api/workflows/{id}/callback` - Workflow callback from n8n
+- `GET /api/events` - List all events
+- `GET /api/events/{id}` - Get event by ID
+- `PUT /api/events/{id}` - Update event
+- `GET /api/audit` - Get audit trail
+- `GET /swagger-ui.html` - Swagger UI
+- `GET /h2-console` - H2 database console
 
-## Database Tables
-- `users` - User accounts
-- `products` - Product catalog (name, category, price, stock, status)
-- `orders` - Customer orders (customer, product, quantity, amount, status)
-- `activities` - System activity log
+## Database
+- Default: H2 file-based database (no setup required)
+- Production: PostgreSQL (configure via environment variables)
+- Tables: workflow_execution, sample_event, audit_trail
 
 ## Running
 ```bash
-npm run dev          # Start dev server (port 5000)
-npm run db:push      # Push schema to database
+mvn clean package -DskipTests   # Build the JAR
+java -jar target/test-orchestrator-2.0.0.jar  # Run on port 5000
 ```
 
-## AWS Deployment Guide
-
-### Prerequisites
-1. AWS account with EC2 access
-2. An EC2 instance (Amazon Linux 2 or Ubuntu)
-3. Security group allowing ports 22 (SSH), 80 (HTTP), 443 (HTTPS)
-4. A PostgreSQL database (RDS or self-hosted on EC2)
-
-### Step 1: Prepare EC2 Instance
-```bash
-# SSH into your EC2 instance
-ssh -i your-key.pem ec2-user@your-ec2-public-ip
-
-# Install Node.js 20
-curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
-sudo yum install -y nodejs
-
-# Install Apache
-sudo yum install -y httpd
-sudo systemctl enable httpd
-sudo systemctl start httpd
-
-# Install PM2 for process management
-sudo npm install -g pm2
-```
-
-### Step 2: Deploy Backend
-```bash
-# Copy your built files to EC2
-# From local: scp -r dist/ ec2-user@your-ip:/home/ec2-user/app/
-
-# On EC2:
-cd /home/ec2-user/app
-npm install --production
-export DATABASE_URL="postgresql://user:pass@your-db-host:5432/samplefullstack"
-pm2 start dist/index.js --name samplefullstack-api
-pm2 save
-pm2 startup
-```
-
-### Step 3: Configure Apache Reverse Proxy
-```bash
-sudo vi /etc/httpd/conf.d/samplefullstack.conf
-```
-
-Add this config:
-```apache
-<VirtualHost *:80>
-    ServerName your-public-ip-or-domain
-
-    # Frontend - serve static files
-    DocumentRoot /home/ec2-user/app/dist/public
-
-    <Directory /home/ec2-user/app/dist/public>
-        AllowOverride All
-        Require all granted
-    </Directory>
-
-    # Backend API reverse proxy
-    ProxyPreserveHost On
-    ProxyPass /api http://localhost:5000/api
-    ProxyPassReverse /api http://localhost:5000/api
-
-    # SPA fallback - serve index.html for all non-API routes
-    RewriteEngine On
-    RewriteCond %{REQUEST_URI} !^/api
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule . /index.html [L]
-</VirtualHost>
-```
-
-```bash
-# Enable required Apache modules
-sudo a2enmod proxy proxy_http rewrite  # Ubuntu
-# or for Amazon Linux:
-# Modules are usually pre-installed, check /etc/httpd/conf.modules.d/
-
-sudo systemctl restart httpd
-```
-
-### Step 4: Set Up PostgreSQL (RDS)
-1. Create RDS PostgreSQL instance in AWS Console
-2. Configure security group to allow EC2 to connect
-3. Set DATABASE_URL environment variable on EC2
-4. Run schema push: `npm run db:push`
-
-### Step 5: Access the App
-- Frontend: `http://your-ec2-public-ip`
-- Backend API: `http://your-ec2-public-ip/api/health`
-- All API endpoints accessible via `/api/*` through reverse proxy
-
-## User Preferences
-- Dark/light theme toggle available
-- Sidebar navigation with collapsible menu
+## Environment Variables (optional, for PostgreSQL)
+- `SPRING_DATASOURCE_URL` - JDBC URL
+- `SPRING_DATASOURCE_DRIVER` - Driver class
+- `SPRING_DATASOURCE_USERNAME` - DB username
+- `SPRING_DATASOURCE_PASSWORD` - DB password
+- `SPRING_JPA_DIALECT` - Hibernate dialect

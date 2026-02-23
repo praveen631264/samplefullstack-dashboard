@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>n8n File Uploader Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2em;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .form-group {
+            margin-bottom: 1em;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 0.5em;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.5em;
+        }
+
+        button {
+            padding: 1em 2em;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Upload to n8n Webhook</h1>
+    <p>Make sure you are logged into n8n in this browser before submitting!</p>
+
+    <!-- Using the exact test webhook URL from your app -->
+    <form action="https://n8n.aix.devx.systems/webhook-test/cbc9a13e-952e-4708-83d4-eac803e99a93" method="POST"
+        enctype="multipart/form-data">
+
+        <div class="form-group">
+            <label for="source1">Source 1 (Event XLSX/PDF):</label>
+            <input type="file" name="source1" id="source1">
+        </div>
+
+        <div class="form-group">
+            <label for="source2">Source 2 (Verification PDF):</label>
+            <input type="file" name="source2" id="source2">
+        </div>
+
+        <div class="form-group">
+            <label for="workflowId">Workflow ID:</label>
+            <input type="text" name="workflowId" id="workflowId" value="test-workflow-12345">
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <input type="text" name="description" id="description" value="Testing direct upload">
+        </div>
+
+        <div class="form-group">
+            <label for="callbackUrl">Callback URL:</label>
+            <input type="text" name="callbackUrl" id="callbackUrl"
+                value="https://green-gifts-pay.loca.lt/api/workflows/test-workflow-12345/status">
+        </div>
+
+        <button type="submit">Upload and Send to n8n</button>
+    </form>
+</body>
+
+</html>

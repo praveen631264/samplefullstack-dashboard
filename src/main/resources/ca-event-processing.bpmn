@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  targetNamespace="http://dtcc.com/hackathon/ca-processor"
+                  id="Definitions_1">
+  
+  <bpmn:process id="ca-event-processing" name="Corporate Action Event Processing" isExecutable="true">
+    
+    <!-- Start Event -->
+    <bpmn:startEvent id="start" name="Files Received">
+      <bpmn:outgoing>flow_to_parse</bpmn:outgoing>
+    </bpmn:startEvent>
+    
+    <!-- Parallel Gateway: Split for parallel parsing -->
+    <bpmn:parallelGateway id="parallel_split" name="Parse in Parallel">
+      <bpmn:incoming>flow_to_parse</bpmn:incoming>
+      <bpmn:outgoing>flow_to_xlsx</bpmn:outgoing>
+      <bpmn:outgoing>flow_to_pdf</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    
+    <!-- Branch 1: Parse XLSX -->
+    <bpmn:serviceTask id="parse_xlsx" name="Parse Source 1 (XLSX)" camunda:type="external" camunda:topic="parse-xlsx">
+      <bpmn:incoming>flow_to_xlsx</bpmn:incoming>
+      <bpmn:outgoing>flow_xlsx_to_ai</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <bpmn:serviceTask id="ai_extract_s1" name="AI Extract JSON (Bedrock)" camunda:type="external" camunda:topic="ai-extract-s1">
+      <bpmn:incoming>flow_xlsx_to_ai</bpmn:incoming>
+      <bpmn:outgoing>flow_ai_to_type</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- Event Type Router -->
+    <bpmn:exclusiveGateway id="type_router" name="Event Type?">
+      <bpmn:incoming>flow_ai_to_type</bpmn:incoming>
+      <bpmn:outgoing>flow_full_call</bpmn:outgoing>
+      <bpmn:outgoing>flow_partial_call</bpmn:outgoing>
+      <bpmn:outgoing>flow_redemption</bpmn:outgoing>
+      <bpmn:outgoing>flow_reorg</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <bpmn:serviceTask id="handle_full_call" name="Full Call Processing">
+      <bpmn:incoming>flow_full_call</bpmn:incoming>
+      <bpmn:outgoing>flow_fc_to_create</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <bpmn:serviceTask id="handle_partial_call" name="Partial Call Processing">
+      <bpmn:incoming>flow_partial_call</bpmn:incoming>
+      <bpmn:outgoing>flow_pc_to_create</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <bpmn:serviceTask id="handle_redemption" name="Redemption Processing">
+      <bpmn:incoming>flow_redemption</bpmn:incoming>
+      <bpmn:outgoing>flow_rd_to_create</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <bpmn:serviceTask id="handle_reorg" name="Reorg Processing">
+      <bpmn:incoming>flow_reorg</bpmn:incoming>
+      <bpmn:outgoing>flow_rg_to_create</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- Create Event API -->
+    <bpmn:serviceTask id="create_event" name="Create Event (API)" camunda:type="external" camunda:topic="create-event">
+      <bpmn:incoming>flow_fc_to_create</bpmn:incoming>
+      <bpmn:incoming>flow_pc_to_create</bpmn:incoming>
+      <bpmn:incoming>flow_rd_to_create</bpmn:incoming>
+      <bpmn:incoming>flow_rg_to_create</bpmn:incoming>
+      <bpmn:outgoing>flow_create_to_merge</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- Branch 2: Parse PDF -->
+    <bpmn:serviceTask id="parse_pdf" name="Parse Source 2 (PDF)" camunda:type="external" camunda:topic="parse-pdf">
+      <bpmn:incoming>flow_to_pdf</bpmn:incoming>
+      <bpmn:outgoing>flow_pdf_to_ai</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <bpmn:serviceTask id="ai_extract_s2" name="AI Extract JSON (Bedrock)" camunda:type="external" camunda:topic="ai-extract-s2">
+      <bpmn:incoming>flow_pdf_to_ai</bpmn:incoming>
+      <bpmn:outgoing>flow_s2_to_merge</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- Merge: Wait for both branches -->
+    <bpmn:parallelGateway id="parallel_join" name="Merge Results">
+      <bpmn:incoming>flow_create_to_merge</bpmn:incoming>
+      <bpmn:incoming>flow_s2_to_merge</bpmn:incoming>
+      <bpmn:outgoing>flow_to_compare</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    
+    <!-- Compare Source 1 & Source 2 -->
+    <bpmn:serviceTask id="compare_sources" name="Compare S1 vs S2 (AI)" camunda:type="external" camunda:topic="compare-sources">
+      <bpmn:incoming>flow_to_compare</bpmn:incoming>
+      <bpmn:outgoing>flow_to_decision</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- Verification Decision -->
+    <bpmn:exclusiveGateway id="verification_decision" name="Match?">
+      <bpmn:incoming>flow_to_decision</bpmn:incoming>
+      <bpmn:outgoing>flow_match</bpmn:outgoing>
+      <bpmn:outgoing>flow_mismatch</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <!-- Auto-approve on match -->
+    <bpmn:serviceTask id="auto_approve" name="Auto-Approve (Verified)">
+      <bpmn:incoming>flow_match</bpmn:incoming>
+      <bpmn:outgoing>flow_approve_to_end</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- Human task on mismatch (Maker-Checker) -->
+    <bpmn:userTask id="maker_checker" name="Maker-Checker Review" camunda:assignee="checker">
+      <bpmn:incoming>flow_mismatch</bpmn:incoming>
+      <bpmn:outgoing>flow_checker_to_end</bpmn:outgoing>
+    </bpmn:userTask>
+    
+    <!-- Status Callback -->
+    <bpmn:serviceTask id="status_callback" name="Status Callback">
+      <bpmn:incoming>flow_approve_to_end</bpmn:incoming>
+      <bpmn:incoming>flow_checker_to_end</bpmn:incoming>
+      <bpmn:outgoing>flow_to_end</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- End Event -->
+    <bpmn:endEvent id="end" name="Processing Complete">
+      <bpmn:incoming>flow_to_end</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="flow_to_parse" sourceRef="start" targetRef="parallel_split"/>
+    <bpmn:sequenceFlow id="flow_to_xlsx" sourceRef="parallel_split" targetRef="parse_xlsx"/>
+    <bpmn:sequenceFlow id="flow_to_pdf" sourceRef="parallel_split" targetRef="parse_pdf"/>
+    <bpmn:sequenceFlow id="flow_xlsx_to_ai" sourceRef="parse_xlsx" targetRef="ai_extract_s1"/>
+    <bpmn:sequenceFlow id="flow_ai_to_type" sourceRef="ai_extract_s1" targetRef="type_router"/>
+    <bpmn:sequenceFlow id="flow_full_call" name="Full Call" sourceRef="type_router" targetRef="handle_full_call"/>
+    <bpmn:sequenceFlow id="flow_partial_call" name="Partial Call" sourceRef="type_router" targetRef="handle_partial_call"/>
+    <bpmn:sequenceFlow id="flow_redemption" name="Redemption" sourceRef="type_router" targetRef="handle_redemption"/>
+    <bpmn:sequenceFlow id="flow_reorg" name="Reorg" sourceRef="type_router" targetRef="handle_reorg"/>
+    <bpmn:sequenceFlow id="flow_fc_to_create" sourceRef="handle_full_call" targetRef="create_event"/>
+    <bpmn:sequenceFlow id="flow_pc_to_create" sourceRef="handle_partial_call" targetRef="create_event"/>
+    <bpmn:sequenceFlow id="flow_rd_to_create" sourceRef="handle_redemption" targetRef="create_event"/>
+    <bpmn:sequenceFlow id="flow_rg_to_create" sourceRef="handle_reorg" targetRef="create_event"/>
+    <bpmn:sequenceFlow id="flow_create_to_merge" sourceRef="create_event" targetRef="parallel_join"/>
+    <bpmn:sequenceFlow id="flow_pdf_to_ai" sourceRef="parse_pdf" targetRef="ai_extract_s2"/>
+    <bpmn:sequenceFlow id="flow_s2_to_merge" sourceRef="ai_extract_s2" targetRef="parallel_join"/>
+    <bpmn:sequenceFlow id="flow_to_compare" sourceRef="parallel_join" targetRef="compare_sources"/>
+    <bpmn:sequenceFlow id="flow_to_decision" sourceRef="compare_sources" targetRef="verification_decision"/>
+    <bpmn:sequenceFlow id="flow_match" name="All Match" sourceRef="verification_decision" targetRef="auto_approve"/>
+    <bpmn:sequenceFlow id="flow_mismatch" name="Discrepancy" sourceRef="verification_decision" targetRef="maker_checker"/>
+    <bpmn:sequenceFlow id="flow_approve_to_end" sourceRef="auto_approve" targetRef="status_callback"/>
+    <bpmn:sequenceFlow id="flow_checker_to_end" sourceRef="maker_checker" targetRef="status_callback"/>
+    <bpmn:sequenceFlow id="flow_to_end" sourceRef="status_callback" targetRef="end"/>
+    
+  </bpmn:process>
+</bpmn:definitions>
