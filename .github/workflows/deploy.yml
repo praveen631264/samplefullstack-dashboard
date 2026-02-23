@@ -46,22 +46,22 @@ jobs:
           # Rename JAR for consistency
           mv target/*.jar ./app.jar
           
-          # Diagnostics and JAR inspection
-          ls -R
-          jar tf app.jar | grep AgentController || echo "AgentController NOT in JAR"
+          # Diagnostics: Inspect JAR content
+          ls -lh app.jar
+          unzip -l app.jar | grep AgentController || echo "AgentController NOT in JAR"
           
           # Clean up temporary upload structure
           rm -rf target
           
-          # Stop Apache to free up port 80 if it's running
+          # Eradicate zombie processes on port 5000 and port 80
+          sudo fuser -k 5000/tcp 2>/dev/null || true
           sudo systemctl stop apache2 2>/dev/null || true
           sudo systemctl disable apache2 2>/dev/null || true
 
           # Stop existing app if running
           sudo pm2 delete test-orchestrator 2>/dev/null || true
 
-          # Start the Spring Boot app with sudo for port 80
-          # Map standard DB_URL to Spring Boot properties
+          # Start the Spring Boot app with absolute paths
           DB_URL="${{ secrets.DATABASE_URL }}"
           DB_HOST=$(echo $DB_URL | sed -e 's|.*@||' -e 's|:.*||')
 
@@ -73,9 +73,8 @@ jobs:
                NODE_ENV="production" \
                pm2 start /usr/bin/java --name test-orchestrator -- -jar /home/ubuntu/app/app.jar
 
-          # Diagnostics
-          sleep 10
-          ls -lh /home/ubuntu/app/app.jar
+          # Diagnostics: Monitoring Startup
+          sleep 20
           sudo pm2 status
           sudo pm2 logs test-orchestrator --lines 100 --no-daemon &
           sleep 10
