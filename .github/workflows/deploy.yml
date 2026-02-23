@@ -1,0 +1,74 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches: [ main, test_workflow ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build with Maven
+      run: |
+        cd backend-spring
+        mvn clean package -DskipTests
+
+    - name: Copy Files to EC2
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        source: "backend-spring/target/*.jar,frontend/,deploy.sh"
+        target: "/home/ubuntu/app"
+        strip_components: 0
+
+    - name: Execute Remote SSH Commands
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          cd /home/ubuntu/app
+          
+          # Rename JAR for consistency
+          mv backend-spring/target/*.jar ./app.jar
+          
+          # Clean up temporary upload structure
+          rm -rf backend-spring
+          
+          # Stop Apache to free up port 80 if it's running
+          sudo systemctl stop apache2 2>/dev/null || true
+          sudo systemctl disable apache2 2>/dev/null || true
+
+          # Stop existing app if running
+          sudo pm2 delete test-orchestrator 2>/dev/null || true
+
+          # Start the Spring Boot app with sudo for port 80
+          # Map standard DB_URL to Spring Boot properties
+          DB_URL="${{ secrets.DATABASE_URL }}"
+          DB_HOST=$(echo $DB_URL | sed -e 's|.*@||' -e 's|:.*||')
+          
+          sudo SPRING_DATASOURCE_URL="jdbc:postgresql://$DB_HOST:5432/postgres" \
+               SPRING_DATASOURCE_USERNAME="aihackathon" \
+               SPRING_DATASOURCE_PASSWORD="aihackathon" \
+               SPRING_DATASOURCE_DRIVER="org.postgresql.Driver" \
+               SPRING_JPA_DIALECT="org.hibernate.dialect.PostgreSQLDialect" \
+               NODE_ENV="production" \
+               pm2 start "/usr/bin/java -jar app.jar" --name test-orchestrator
+
+          sudo pm2 save
