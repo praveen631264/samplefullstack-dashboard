@@ -151,4 +151,226 @@
     <bpmn:sequenceFlow id="flow_to_end" sourceRef="status_callback" targetRef="end"/>
     
   </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="ca-event-processing">
+
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start">
+        <dc:Bounds x="160" y="310" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="140" y="353" width="76" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="parallel_split_di" bpmnElement="parallel_split">
+        <dc:Bounds x="275" y="303" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="258" y="360" width="84" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="parse_xlsx_di" bpmnElement="parse_xlsx">
+        <dc:Bounds x="410" y="130" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="ai_extract_s1_di" bpmnElement="ai_extract_s1">
+        <dc:Bounds x="580" y="130" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="type_router_di" bpmnElement="type_router" isMarkerVisible="true">
+        <dc:Bounds x="745" y="145" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="735" y="121" width="70" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="handle_full_call_di" bpmnElement="handle_full_call">
+        <dc:Bounds x="870" y="20" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="handle_partial_call_di" bpmnElement="handle_partial_call">
+        <dc:Bounds x="870" y="120" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="handle_redemption_di" bpmnElement="handle_redemption">
+        <dc:Bounds x="870" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="handle_reorg_di" bpmnElement="handle_reorg">
+        <dc:Bounds x="870" y="320" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="create_event_di" bpmnElement="create_event">
+        <dc:Bounds x="1050" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="parse_pdf_di" bpmnElement="parse_pdf">
+        <dc:Bounds x="410" y="470" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="ai_extract_s2_di" bpmnElement="ai_extract_s2">
+        <dc:Bounds x="580" y="470" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="parallel_join_di" bpmnElement="parallel_join">
+        <dc:Bounds x="1225" y="303" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1210" y="360" width="80" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="compare_sources_di" bpmnElement="compare_sources">
+        <dc:Bounds x="1350" y="288" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="verification_decision_di" bpmnElement="verification_decision" isMarkerVisible="true">
+        <dc:Bounds x="1525" y="303" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1530" y="360" width="40" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="auto_approve_di" bpmnElement="auto_approve">
+        <dc:Bounds x="1650" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="maker_checker_di" bpmnElement="maker_checker">
+        <dc:Bounds x="1650" y="380" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="status_callback_di" bpmnElement="status_callback">
+        <dc:Bounds x="1830" y="288" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="end_di" bpmnElement="end">
+        <dc:Bounds x="2010" y="310" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1980" y="353" width="96" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="flow_to_parse_di" bpmnElement="flow_to_parse">
+        <di:waypoint x="196" y="328" />
+        <di:waypoint x="275" y="328" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_to_xlsx_di" bpmnElement="flow_to_xlsx">
+        <di:waypoint x="300" y="303" />
+        <di:waypoint x="300" y="170" />
+        <di:waypoint x="410" y="170" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_to_pdf_di" bpmnElement="flow_to_pdf">
+        <di:waypoint x="300" y="353" />
+        <di:waypoint x="300" y="510" />
+        <di:waypoint x="410" y="510" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_xlsx_to_ai_di" bpmnElement="flow_xlsx_to_ai">
+        <di:waypoint x="510" y="170" />
+        <di:waypoint x="580" y="170" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_ai_to_type_di" bpmnElement="flow_ai_to_type">
+        <di:waypoint x="680" y="170" />
+        <di:waypoint x="745" y="170" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_full_call_di" bpmnElement="flow_full_call">
+        <di:waypoint x="770" y="145" />
+        <di:waypoint x="770" y="60" />
+        <di:waypoint x="870" y="60" />
+        <bpmndi:BPMNLabel><dc:Bounds x="790" y="42" width="50" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_partial_call_di" bpmnElement="flow_partial_call">
+        <di:waypoint x="795" y="165" />
+        <di:waypoint x="870" y="160" />
+        <bpmndi:BPMNLabel><dc:Bounds x="800" y="142" width="60" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_redemption_di" bpmnElement="flow_redemption">
+        <di:waypoint x="770" y="195" />
+        <di:waypoint x="770" y="260" />
+        <di:waypoint x="870" y="260" />
+        <bpmndi:BPMNLabel><dc:Bounds x="790" y="242" width="60" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_reorg_di" bpmnElement="flow_reorg">
+        <di:waypoint x="770" y="195" />
+        <di:waypoint x="770" y="360" />
+        <di:waypoint x="870" y="360" />
+        <bpmndi:BPMNLabel><dc:Bounds x="790" y="342" width="40" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_fc_to_create_di" bpmnElement="flow_fc_to_create">
+        <di:waypoint x="970" y="60" />
+        <di:waypoint x="1100" y="60" />
+        <di:waypoint x="1100" y="170" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_pc_to_create_di" bpmnElement="flow_pc_to_create">
+        <di:waypoint x="970" y="160" />
+        <di:waypoint x="1050" y="195" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_rd_to_create_di" bpmnElement="flow_rd_to_create">
+        <di:waypoint x="970" y="260" />
+        <di:waypoint x="1050" y="230" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_rg_to_create_di" bpmnElement="flow_rg_to_create">
+        <di:waypoint x="970" y="360" />
+        <di:waypoint x="1100" y="360" />
+        <di:waypoint x="1100" y="250" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_create_to_merge_di" bpmnElement="flow_create_to_merge">
+        <di:waypoint x="1150" y="210" />
+        <di:waypoint x="1250" y="210" />
+        <di:waypoint x="1250" y="303" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_pdf_to_ai_di" bpmnElement="flow_pdf_to_ai">
+        <di:waypoint x="510" y="510" />
+        <di:waypoint x="580" y="510" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_s2_to_merge_di" bpmnElement="flow_s2_to_merge">
+        <di:waypoint x="680" y="510" />
+        <di:waypoint x="1250" y="510" />
+        <di:waypoint x="1250" y="353" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_to_compare_di" bpmnElement="flow_to_compare">
+        <di:waypoint x="1275" y="328" />
+        <di:waypoint x="1350" y="328" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_to_decision_di" bpmnElement="flow_to_decision">
+        <di:waypoint x="1450" y="328" />
+        <di:waypoint x="1525" y="328" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_match_di" bpmnElement="flow_match">
+        <di:waypoint x="1550" y="303" />
+        <di:waypoint x="1550" y="250" />
+        <di:waypoint x="1650" y="250" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1570" y="232" width="50" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_mismatch_di" bpmnElement="flow_mismatch">
+        <di:waypoint x="1550" y="353" />
+        <di:waypoint x="1550" y="420" />
+        <di:waypoint x="1650" y="420" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1565" y="402" width="65" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_approve_to_end_di" bpmnElement="flow_approve_to_end">
+        <di:waypoint x="1750" y="250" />
+        <di:waypoint x="1880" y="250" />
+        <di:waypoint x="1880" y="288" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_checker_to_end_di" bpmnElement="flow_checker_to_end">
+        <di:waypoint x="1750" y="420" />
+        <di:waypoint x="1880" y="420" />
+        <di:waypoint x="1880" y="368" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="flow_to_end_di" bpmnElement="flow_to_end">
+        <di:waypoint x="1930" y="328" />
+        <di:waypoint x="2010" y="328" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 </bpmn:definitions>

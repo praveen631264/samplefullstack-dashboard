@@ -9,6 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://unpkg.com/bpmn-js@17.11.1/dist/bpmn-navigated-viewer.production.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/bpmn-js@17.11.1/dist/assets/diagram-js.css">
+  <link rel="stylesheet" href="https://unpkg.com/bpmn-js@17.11.1/dist/assets/bpmn-js.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -205,17 +208,25 @@
     <div class="view" id="view-bpmn">
       <div class="card-header" style="margin-bottom:20px">
         <i data-lucide="git-branch" class="header-icon"></i>
-        <h2>BPMN Process Viewer</h2>
+        <h2>FluxNova Process Viewer</h2>
+        <span class="badge" style="margin-left:12px;font-size:11px">BPMN 2.0</span>
       </div>
       <div class="card bpmn-container">
-        <div class="bpmn-diagram" id="bpmn-diagram"></div>
+        <div class="bpmn-toolbar" data-testid="bpmn-toolbar">
+          <button class="btn btn-sm" onclick="bpmnZoomIn()" data-testid="btn-zoom-in"><i data-lucide="zoom-in"></i> Zoom In</button>
+          <button class="btn btn-sm" onclick="bpmnZoomOut()" data-testid="btn-zoom-out"><i data-lucide="zoom-out"></i> Zoom Out</button>
+          <button class="btn btn-sm" onclick="bpmnFitView()" data-testid="btn-fit-view"><i data-lucide="maximize-2"></i> Fit</button>
+          <button class="btn btn-sm" onclick="bpmnResetZoom()" data-testid="btn-reset-zoom"><i data-lucide="rotate-ccw"></i> Reset</button>
+          <span class="bpmn-process-name" id="bpmn-process-name" data-testid="text-process-name"></span>
+        </div>
+        <div class="bpmn-canvas" id="bpmn-canvas" data-testid="bpmn-canvas"></div>
         <div class="bpmn-legend">
-          <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> Webhook / Trigger</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> File Parsing</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#8b5cf6"></span> AI / AWS Bedrock</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#6366f1"></span> Flow Control</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span> API / Database</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#94a3b8"></span> Utility</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#22b14c"></span> Start Event</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#ff3d00"></span> End Event</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#4296f4"></span> Service Task</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#f9a825"></span> User Task</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#7b1fa2"></span> Gateway</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#78909c"></span> Sequence Flow</div>
         </div>
       </div>
     </div>

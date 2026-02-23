@@ -490,88 +490,98 @@ function renderAuditTrail(audits) {
   `).join('');
 }
 
-function renderBPMN() {
-  const container = document.getElementById('bpmn-diagram');
-  container.innerHTML = `
-    <div class="bpmn-title">TestFluxNova — n8n Workflow</div>
-    <div class="bpmn-flow-vertical">
-      ${bpmnNode('circle', 'play', 'Start', '#3b82f6')}
-      ${bpmnArrowDown()}
-      ${bpmnNode('rect', 'webhook', 'Receive Both Files', '#3b82f6', 'n8n Webhook')}
-      ${bpmnArrowDown()}
-      <div class="bpmn-fork">
-        <div class="bpmn-fork-label">PARALLEL TRIGGER</div>
-        <div class="bpmn-fork-branches">
-          <div class="bpmn-branch">
-            <div class="bpmn-branch-label">Callback</div>
-            ${bpmnNode('rect', 'send', 'Callback:\nPARSING', '#6366f1', 'HTTP Request')}
-          </div>
-          <div class="bpmn-branch">
-            <div class="bpmn-branch-label">Source 1 (XLSX)</div>
-            ${bpmnNode('rect', 'file-spreadsheet', 'Parse Source 1\n(XLSX)', '#f59e0b', 'Extract from File')}
-            ${bpmnArrowDown()}
-            ${bpmnNode('rect', 'brain', 'AI Extract\nSource 1 JSON', '#8b5cf6', 'AWS Bedrock Agent')}
-            <div class="bpmn-sub-nodes">
-              ${bpmnSubNode('cpu', 'AWS Bedrock (S1)', '#8b5cf6')}
-              ${bpmnSubNode('braces', 'JSON Formatter (S1)', '#8b5cf6')}
-            </div>
-            ${bpmnArrowDown()}
-            ${bpmnNode('rect', 'database', 'Create Event\nAPI', '#10b981', 'HTTP POST')}
-          </div>
-          <div class="bpmn-branch">
-            <div class="bpmn-branch-label">Source 2 (PDF)</div>
-            ${bpmnNode('rect', 'file-text', 'Parse Source 2\n(PDF)', '#f59e0b', 'Extract from File')}
-            ${bpmnArrowDown()}
-            ${bpmnNode('rect', 'brain', 'AI Extract\nSource 2 JSON', '#8b5cf6', 'AWS Bedrock Agent')}
-            <div class="bpmn-sub-nodes">
-              ${bpmnSubNode('cpu', 'AWS Bedrock (S2)', '#8b5cf6')}
-              ${bpmnSubNode('braces', 'JSON Formatter (S2)', '#8b5cf6')}
-            </div>
-          </div>
-        </div>
-      </div>
-      ${bpmnArrowDown()}
-      ${bpmnNode('diamond', 'git-merge', 'Merge S1 + S2\nResults', '#6366f1', 'Merge Node')}
-      ${bpmnArrowDown()}
-      ${bpmnNode('rect', 'filter', 'Limit to 1', '#94a3b8', 'Item Lists')}
-      ${bpmnArrowDown()}
-      ${bpmnNode('rect', 'scale', 'Compare\nS1 & S2', '#8b5cf6', 'AWS Bedrock Agent')}
-      <div class="bpmn-sub-nodes">
-        ${bpmnSubNode('cpu', 'AWS Bedrock (Compare)', '#8b5cf6')}
-        ${bpmnSubNode('braces', 'JSON Formatter (Compare)', '#8b5cf6')}
-      </div>
-      ${bpmnArrowDown()}
-      ${bpmnNode('rect', 'clipboard-check', 'Update Event\nStatus', '#10b981', 'HTTP PUT')}
-      ${bpmnArrowDown()}
-      ${bpmnNode('rect', 'send', 'Callback:\nCOMPLETED', '#6366f1', 'HTTP Request')}
-      ${bpmnArrowDown()}
-      ${bpmnNode('circle', 'square', 'End', '#10b981')}
-    </div>
-  `;
+let bpmnViewer = null;
+
+async function renderBPMN() {
+  const canvas = document.getElementById('bpmn-canvas');
+  const processName = document.getElementById('bpmn-process-name');
+
+  if (bpmnViewer) {
+    bpmnViewer.destroy();
+    bpmnViewer = null;
+  }
+
+  canvas.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted)"><i data-lucide="loader" class="spin" style="margin-right:8px"></i> Loading BPMN diagram...</div>';
   lucide.createIcons();
+
+  try {
+    const res = await fetch('/api/bpmn/ca-event-processing');
+    if (!res.ok) throw new Error('Failed to load BPMN');
+    const xml = await res.text();
+
+    canvas.innerHTML = '';
+    bpmnViewer = new BpmnJS({ container: canvas });
+
+    const result = await bpmnViewer.importXML(xml);
+
+    const canvasModule = bpmnViewer.get('canvas');
+    canvasModule.zoom('fit-viewport');
+
+    const defs = bpmnViewer.getDefinitions();
+    if (defs && defs.rootElements) {
+      const proc = defs.rootElements.find(e => e.$type === 'bpmn:Process');
+      if (proc && proc.name) {
+        processName.textContent = proc.name;
+      }
+    }
+
+    applyBpmnStyling();
+
+  } catch (err) {
+    canvas.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);flex-direction:column;gap:8px">
+      <i data-lucide="alert-triangle" style="width:32px;height:32px;color:#f59e0b"></i>
+      <span>Failed to load BPMN diagram</span>
+      <span style="font-size:11px">${err.message}</span>
+    </div>`;
+    lucide.createIcons();
+  }
 }
 
-function bpmnNode(shape, icon, label, color, nodeType) {
-  const shapeClass = shape === 'circle' ? 'bpmn-circle' : shape === 'diamond' ? 'bpmn-diamond' : 'bpmn-rect';
-  const typeTag = nodeType ? `<div class="bpmn-node-type">${nodeType}</div>` : '';
-  return `<div class="bpmn-node">
-    <div class="${shapeClass}" style="background:${color}0d;border:2px solid ${color}">
-      <i data-lucide="${icon}" style="width:18px;height:18px;color:${color}"></i>
-    </div>
-    <div class="bpmn-node-label">${label.replace(/\n/g, '<br>')}</div>
-    ${typeTag}
-  </div>`;
+function applyBpmnStyling() {
+  if (!bpmnViewer) return;
+  const elementRegistry = bpmnViewer.get('elementRegistry');
+  const canvas = bpmnViewer.get('canvas');
+
+  elementRegistry.forEach(function(element) {
+    const bo = element.businessObject;
+    if (!bo) return;
+
+    if (bo.$type === 'bpmn:ServiceTask') {
+      canvas.addMarker(element.id, 'bpmn-service-task');
+    } else if (bo.$type === 'bpmn:UserTask') {
+      canvas.addMarker(element.id, 'bpmn-user-task');
+    } else if (bo.$type === 'bpmn:ParallelGateway') {
+      canvas.addMarker(element.id, 'bpmn-parallel-gw');
+    } else if (bo.$type === 'bpmn:ExclusiveGateway') {
+      canvas.addMarker(element.id, 'bpmn-exclusive-gw');
+    } else if (bo.$type === 'bpmn:StartEvent') {
+      canvas.addMarker(element.id, 'bpmn-start-event');
+    } else if (bo.$type === 'bpmn:EndEvent') {
+      canvas.addMarker(element.id, 'bpmn-end-event');
+    }
+  });
 }
 
-function bpmnSubNode(icon, label, color) {
-  return `<div class="bpmn-sub-node">
-    <i data-lucide="${icon}" style="width:12px;height:12px;color:${color}"></i>
-    <span>${label}</span>
-  </div>`;
+function bpmnZoomIn() {
+  if (!bpmnViewer) return;
+  const c = bpmnViewer.get('canvas');
+  c.zoom(c.zoom() * 1.2);
 }
 
-function bpmnArrowDown() {
-  return '<div class="bpmn-arrow-down"><i data-lucide="arrow-down" style="width:16px;height:16px;color:#94a3b8"></i></div>';
+function bpmnZoomOut() {
+  if (!bpmnViewer) return;
+  const c = bpmnViewer.get('canvas');
+  c.zoom(c.zoom() / 1.2);
+}
+
+function bpmnFitView() {
+  if (!bpmnViewer) return;
+  bpmnViewer.get('canvas').zoom('fit-viewport');
+}
+
+function bpmnResetZoom() {
+  if (!bpmnViewer) return;
+  bpmnViewer.get('canvas').zoom(1.0);
 }
 
 function startPolling() {

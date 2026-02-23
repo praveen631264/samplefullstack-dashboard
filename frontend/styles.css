@@ -414,17 +414,29 @@ body {
 .audit-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
 
 .bpmn-container { padding: 20px; }
-.bpmn-diagram {
-  min-height: 350px;
+.bpmn-toolbar {
+  display: flex; gap: 8px; align-items: center; margin-bottom: 12px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--border-color);
+}
+.bpmn-toolbar .btn-sm {
+  padding: 4px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px;
+  background: var(--bg-body); border: 1px solid var(--border-color);
+  border-radius: 6px; cursor: pointer; color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+.bpmn-toolbar .btn-sm:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+.bpmn-toolbar .btn-sm i { width: 14px; height: 14px; }
+.bpmn-process-name {
+  margin-left: auto; font-size: 13px; font-weight: 600;
+  color: var(--accent); letter-spacing: -0.3px;
+}
+.bpmn-canvas {
+  height: 520px;
   background: var(--bg-body);
   border-radius: var(--radius-sm);
-  padding: 24px;
-  overflow-y: auto;
-}
-.bpmn-title {
-  font-size: 16px; font-weight: 700; color: var(--text-primary);
-  text-align: center; margin-bottom: 20px;
-  letter-spacing: -0.3px;
+  border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
 }
 .bpmn-legend {
   display: flex; gap: 20px; margin-top: 14px; flex-wrap: wrap;
@@ -433,72 +445,19 @@ body {
 .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
 .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
 
-.bpmn-flow-vertical {
-  display: flex; flex-direction: column; align-items: center; gap: 0;
-}
-.bpmn-node {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 4px 6px;
-}
-.bpmn-rect {
-  width: 160px; min-height: 44px; padding: 10px 12px;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 8px; font-size: 18px;
-}
-.bpmn-circle {
-  width: 40px; height: 40px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-}
-.bpmn-diamond {
-  width: 48px; height: 48px; transform: rotate(45deg); border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-}
-.bpmn-diamond i { transform: rotate(-45deg); }
-.bpmn-node-label {
-  font-size: 11px; color: var(--text-primary); text-align: center;
-  max-width: 160px; line-height: 1.35; font-weight: 600;
-}
-.bpmn-node-type {
-  font-size: 9px; color: var(--text-muted); text-align: center;
-  font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;
-}
-.bpmn-arrow-down {
-  display: flex; align-items: center; justify-content: center;
-  padding: 2px 0; color: var(--text-muted);
-}
-.bpmn-sub-nodes {
-  display: flex; gap: 8px; justify-content: center;
-  margin-top: 2px; margin-bottom: 4px;
-}
-.bpmn-sub-node {
-  display: flex; align-items: center; gap: 4px;
-  font-size: 9px; color: var(--text-muted);
-  background: var(--bg-body); border: 1px solid var(--border-color);
-  border-radius: 4px; padding: 2px 8px;
-}
-.bpmn-fork {
-  border: 2px dashed var(--border-color); border-radius: 12px;
-  padding: 16px; background: var(--accent-light);
-  width: 100%; max-width: 680px;
-}
-.bpmn-fork-label {
-  font-size: 10px; color: var(--accent); font-weight: 700;
-  text-align: center; margin-bottom: 12px;
-  letter-spacing: 1px; text-transform: uppercase;
-}
-.bpmn-fork-branches {
-  display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
-}
-.bpmn-branch {
-  display: flex; flex-direction: column; align-items: center; gap: 0;
-  flex: 1; min-width: 170px; max-width: 200px;
-  background: var(--bg-card); border: 1px solid var(--border-color);
-  border-radius: 8px; padding: 12px 8px;
-}
-.bpmn-branch-label {
-  font-size: 10px; color: var(--text-secondary); font-weight: 600;
-  margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;
-}
+.bpmn-service-task .djs-visual rect { stroke: #4296f4 !important; stroke-width: 2px !important; fill: #e3f2fd !important; }
+.bpmn-user-task .djs-visual rect { stroke: #f9a825 !important; stroke-width: 2px !important; fill: #fff8e1 !important; }
+.bpmn-parallel-gw .djs-visual polygon { stroke: #7b1fa2 !important; stroke-width: 2px !important; fill: #f3e5f5 !important; }
+.bpmn-exclusive-gw .djs-visual polygon { stroke: #7b1fa2 !important; stroke-width: 2px !important; fill: #ede7f6 !important; }
+.bpmn-start-event .djs-visual circle { stroke: #22b14c !important; stroke-width: 3px !important; fill: #e8f5e9 !important; }
+.bpmn-end-event .djs-visual circle { stroke: #ff3d00 !important; stroke-width: 3px !important; fill: #fbe9e7 !important; }
+
+.djs-element .djs-visual text { font-family: 'Inter', sans-serif !important; font-size: 11px !important; }
+.djs-connection .djs-visual path { stroke: #78909c !important; }
+.djs-connection .djs-visual path[marker-end] { marker-end: url(#sequenceflow-end) !important; }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.spin { animation: spin 1.5s linear infinite; }
 
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.3);
