@@ -493,56 +493,85 @@ function renderAuditTrail(audits) {
 function renderBPMN() {
   const container = document.getElementById('bpmn-diagram');
   container.innerHTML = `
-    <div class="bpmn-flow">
-      ${bpmnNode('circle', '\u25B6', 'Start', '#3b82f6')}
-      ${bpmnArrow()}
-      ${bpmnNode('rect', '\uD83D\uDCC2', 'Receive Files', '#3b82f6')}
-      ${bpmnArrow()}
-      ${bpmnNode('diamond', '\u2295', 'Parallel\nGateway', '#6366f1')}
-      ${bpmnArrow()}
-      <div class="bpmn-parallel-group">
-        <div class="bpmn-parallel-label">PARALLEL EXECUTION</div>
-        <div class="bpmn-parallel-row">
-          ${bpmnNode('rect', '\uD83D\uDCCA', 'Parse XLSX', '#f59e0b')}
-          ${bpmnArrow()}
-          ${bpmnNode('rect', '\uD83E\uDD16', 'AI Extract', '#f59e0b')}
-          ${bpmnArrow()}
-          ${bpmnNode('diamond', '?', 'Event Type\nRouter', '#8b5cf6')}
-        </div>
-        <div class="bpmn-parallel-row">
-          ${bpmnNode('rect', '\uD83D\uDCC4', 'Parse PDF', '#f59e0b')}
-          ${bpmnArrow()}
-          ${bpmnNode('rect', '\uD83E\uDD16', 'AI Extract', '#f59e0b')}
+    <div class="bpmn-title">TestFluxNova — n8n Workflow</div>
+    <div class="bpmn-flow-vertical">
+      ${bpmnNode('circle', 'play', 'Start', '#3b82f6')}
+      ${bpmnArrowDown()}
+      ${bpmnNode('rect', 'webhook', 'Receive Both Files', '#3b82f6', 'n8n Webhook')}
+      ${bpmnArrowDown()}
+      <div class="bpmn-fork">
+        <div class="bpmn-fork-label">PARALLEL TRIGGER</div>
+        <div class="bpmn-fork-branches">
+          <div class="bpmn-branch">
+            <div class="bpmn-branch-label">Callback</div>
+            ${bpmnNode('rect', 'send', 'Callback:\nPARSING', '#6366f1', 'HTTP Request')}
+          </div>
+          <div class="bpmn-branch">
+            <div class="bpmn-branch-label">Source 1 (XLSX)</div>
+            ${bpmnNode('rect', 'file-spreadsheet', 'Parse Source 1\n(XLSX)', '#f59e0b', 'Extract from File')}
+            ${bpmnArrowDown()}
+            ${bpmnNode('rect', 'brain', 'AI Extract\nSource 1 JSON', '#8b5cf6', 'AWS Bedrock Agent')}
+            <div class="bpmn-sub-nodes">
+              ${bpmnSubNode('cpu', 'AWS Bedrock (S1)', '#8b5cf6')}
+              ${bpmnSubNode('braces', 'JSON Formatter (S1)', '#8b5cf6')}
+            </div>
+            ${bpmnArrowDown()}
+            ${bpmnNode('rect', 'database', 'Create Event\nAPI', '#10b981', 'HTTP POST')}
+          </div>
+          <div class="bpmn-branch">
+            <div class="bpmn-branch-label">Source 2 (PDF)</div>
+            ${bpmnNode('rect', 'file-text', 'Parse Source 2\n(PDF)', '#f59e0b', 'Extract from File')}
+            ${bpmnArrowDown()}
+            ${bpmnNode('rect', 'brain', 'AI Extract\nSource 2 JSON', '#8b5cf6', 'AWS Bedrock Agent')}
+            <div class="bpmn-sub-nodes">
+              ${bpmnSubNode('cpu', 'AWS Bedrock (S2)', '#8b5cf6')}
+              ${bpmnSubNode('braces', 'JSON Formatter (S2)', '#8b5cf6')}
+            </div>
+          </div>
         </div>
       </div>
-      ${bpmnArrow()}
-      ${bpmnNode('rect', '\uD83D\uDCBE', 'Create\nEvent', '#10b981')}
-      ${bpmnArrow()}
-      ${bpmnNode('diamond', '\u2295', 'Merge', '#6366f1')}
-      ${bpmnArrow()}
-      ${bpmnNode('rect', '\u2696\uFE0F', 'Compare\nS1 vs S2', '#8b5cf6')}
-      ${bpmnArrow()}
-      ${bpmnNode('diamond', '?', 'Match?', '#f59e0b')}
-      ${bpmnArrow()}
-      ${bpmnNode('rect', '\u2705', 'Update\nStatus', '#10b981')}
-      ${bpmnArrow()}
-      ${bpmnNode('rect', '\uD83D\uDCE2', 'Callback', '#3b82f6')}
-      ${bpmnArrow()}
-      ${bpmnNode('circle', '\u23F9', 'End', '#10b981')}
+      ${bpmnArrowDown()}
+      ${bpmnNode('diamond', 'git-merge', 'Merge S1 + S2\nResults', '#6366f1', 'Merge Node')}
+      ${bpmnArrowDown()}
+      ${bpmnNode('rect', 'filter', 'Limit to 1', '#94a3b8', 'Item Lists')}
+      ${bpmnArrowDown()}
+      ${bpmnNode('rect', 'scale', 'Compare\nS1 & S2', '#8b5cf6', 'AWS Bedrock Agent')}
+      <div class="bpmn-sub-nodes">
+        ${bpmnSubNode('cpu', 'AWS Bedrock (Compare)', '#8b5cf6')}
+        ${bpmnSubNode('braces', 'JSON Formatter (Compare)', '#8b5cf6')}
+      </div>
+      ${bpmnArrowDown()}
+      ${bpmnNode('rect', 'clipboard-check', 'Update Event\nStatus', '#10b981', 'HTTP PUT')}
+      ${bpmnArrowDown()}
+      ${bpmnNode('rect', 'send', 'Callback:\nCOMPLETED', '#6366f1', 'HTTP Request')}
+      ${bpmnArrowDown()}
+      ${bpmnNode('circle', 'square', 'End', '#10b981')}
     </div>
   `;
+  lucide.createIcons();
 }
 
-function bpmnNode(shape, icon, label, color) {
-  const shapeClass = shape === 'circle' ? 'circle' : shape === 'diamond' ? 'diamond' : '';
+function bpmnNode(shape, icon, label, color, nodeType) {
+  const shapeClass = shape === 'circle' ? 'bpmn-circle' : shape === 'diamond' ? 'bpmn-diamond' : 'bpmn-rect';
+  const typeTag = nodeType ? `<div class="bpmn-node-type">${nodeType}</div>` : '';
   return `<div class="bpmn-node">
-    <div class="bpmn-shape ${shapeClass}" style="background:${color}10;border:2px solid ${color}"><span>${icon}</span></div>
+    <div class="${shapeClass}" style="background:${color}0d;border:2px solid ${color}">
+      <i data-lucide="${icon}" style="width:18px;height:18px;color:${color}"></i>
+    </div>
     <div class="bpmn-node-label">${label.replace(/\n/g, '<br>')}</div>
+    ${typeTag}
   </div>`;
 }
 
-function bpmnArrow() {
-  return '<div class="bpmn-arrow">\u2192</div>';
+function bpmnSubNode(icon, label, color) {
+  return `<div class="bpmn-sub-node">
+    <i data-lucide="${icon}" style="width:12px;height:12px;color:${color}"></i>
+    <span>${label}</span>
+  </div>`;
+}
+
+function bpmnArrowDown() {
+  return '<div class="bpmn-arrow-down"><i data-lucide="arrow-down" style="width:16px;height:16px;color:#94a3b8"></i></div>';
 }
 
 function startPolling() {
