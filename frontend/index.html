@@ -4,205 +4,211 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CA Processor v2.0 | Corporate Action Intelligence Platform</title>
-  <meta name="description" content="AI-Powered Corporate Action Event Processor with Maker-Checker Workflow">
+  <title>Test Orchestrator | Workflow Management Platform</title>
+  <meta name="description" content="Enterprise Workflow Orchestration and Event Processing Platform">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
   <div class="app" id="app">
-    <!-- Navigation -->
     <nav class="navbar">
       <div class="nav-left">
         <div class="logo-container">
-            <div class="logo">TO</div>
-            <div class="logo-text">Test orchestrator</div>
+          <div class="logo-icon-wrap"><i data-lucide="workflow" class="logo-svg"></i></div>
+          <span class="logo-text">Test Orchestrator</span>
+          <span class="version-badge">v2.0</span>
         </div>
       </div>
       <div class="nav-center">
-        <button class="nav-tab active" data-view="launcher" onclick="switchView('launcher')">
-          <span class="tab-icon">🚀</span> Workflow Launcher
+        <button class="nav-tab active" data-view="launcher" onclick="switchView('launcher')" data-testid="tab-launcher">
+          <i data-lucide="rocket" class="tab-svg"></i> Workflow Launcher
         </button>
-        <button class="nav-tab" data-view="events" onclick="switchView('events')">
-          <span class="tab-icon">📋</span> Event Manager
+        <button class="nav-tab" data-view="events" onclick="switchView('events')" data-testid="tab-events">
+          <i data-lucide="clipboard-list" class="tab-svg"></i> Event Manager
         </button>
-        <button class="nav-tab" data-view="dashboard" onclick="switchView('dashboard')">
-          <span class="tab-icon">📊</span> Dashboard
+        <button class="nav-tab" data-view="dashboard" onclick="switchView('dashboard')" data-testid="tab-dashboard">
+          <i data-lucide="bar-chart-3" class="tab-svg"></i> Dashboard
         </button>
-        <button class="nav-tab" data-view="bpmn" onclick="switchView('bpmn')">
-          <span class="tab-icon">🔀</span> Process Viewer
+        <button class="nav-tab" data-view="bpmn" onclick="switchView('bpmn')" data-testid="tab-bpmn">
+          <i data-lucide="git-branch" class="tab-svg"></i> Process Viewer
         </button>
       </div>
       <div class="nav-right">
         <div class="live-indicator">
           <span class="pulse-dot"></span> Live
         </div>
-        <button class="theme-btn" onclick="toggleTheme()">🌙</button>
       </div>
     </nav>
 
-    <!-- ====== VIEW 1: WORKFLOW LAUNCHER ====== -->
     <div class="view active" id="view-launcher">
-      <!-- Hero Stats -->
       <div class="stats-bar">
-        <div class="stat-card glass">
-          <div class="stat-value" id="stat-total-workflows">0</div>
-          <div class="stat-label">Total Workflows</div>
+        <div class="stat-card">
+          <div class="stat-icon-wrap stat-icon-total"><i data-lucide="layers" class="stat-svg"></i></div>
+          <div class="stat-content">
+            <div class="stat-value" id="stat-total-workflows" data-testid="text-total-workflows">0</div>
+            <div class="stat-label">Total Workflows</div>
+          </div>
         </div>
-        <div class="stat-card glass">
-          <div class="stat-value stat-green" id="stat-completed">0</div>
-          <div class="stat-label">Completed</div>
+        <div class="stat-card">
+          <div class="stat-icon-wrap stat-icon-completed"><i data-lucide="check-circle-2" class="stat-svg"></i></div>
+          <div class="stat-content">
+            <div class="stat-value" id="stat-completed" data-testid="text-completed">0</div>
+            <div class="stat-label">Completed</div>
+          </div>
         </div>
-        <div class="stat-card glass">
-          <div class="stat-value stat-yellow" id="stat-in-progress">0</div>
-          <div class="stat-label">In Progress</div>
+        <div class="stat-card">
+          <div class="stat-icon-wrap stat-icon-progress"><i data-lucide="loader" class="stat-svg"></i></div>
+          <div class="stat-content">
+            <div class="stat-value" id="stat-in-progress" data-testid="text-in-progress">0</div>
+            <div class="stat-label">In Progress</div>
+          </div>
         </div>
-        <div class="stat-card glass">
-          <div class="stat-value stat-red" id="stat-failed">0</div>
-          <div class="stat-label">Failed</div>
+        <div class="stat-card">
+          <div class="stat-icon-wrap stat-icon-failed"><i data-lucide="alert-circle" class="stat-svg"></i></div>
+          <div class="stat-content">
+            <div class="stat-value" id="stat-failed" data-testid="text-failed">0</div>
+            <div class="stat-label">Failed</div>
+          </div>
         </div>
       </div>
 
       <div class="launcher-grid">
-        <!-- Upload Section -->
-        <div class="upload-panel glass">
-          <h2 class="section-title">
-            <span class="title-icon">📂</span> Create New Workflow
-          </h2>
+        <div class="form-panel card">
+          <div class="card-header">
+            <i data-lucide="plus-circle" class="header-icon"></i>
+            <h2>Create New Workflow</h2>
+          </div>
           <form id="workflow-form" onsubmit="submitWorkflow(event)">
-            <div class="upload-zone" id="dropzone-source1" onclick="document.getElementById('source1').click()">
-              <div class="upload-icon">📊</div>
-              <div class="upload-label">Source 1 – Event File (XLSX)</div>
-              <div class="upload-hint">Drag & drop or click to upload</div>
-              <div class="file-name" id="source1-name"></div>
-              <input type="file" id="source1" name="source1" accept=".xlsx,.xls,.csv" hidden
-                onchange="handleFileSelect(this, 'source1-name')">
+            <div class="form-group">
+              <label for="source1"><i data-lucide="file-spreadsheet" class="label-icon"></i> Maker File Upload</label>
+              <div class="file-input-wrap" id="dropzone-source1" onclick="document.getElementById('source1').click()" data-testid="input-maker-file">
+                <i data-lucide="upload-cloud" class="file-upload-icon"></i>
+                <span class="file-placeholder">Choose XLSX/CSV file or drag here</span>
+                <span class="file-name" id="source1-name"></span>
+                <input type="file" id="source1" name="source1" accept=".xlsx,.xls,.csv" hidden
+                  onchange="handleFileSelect(this, 'source1-name')">
+              </div>
             </div>
 
-            <div class="upload-zone" id="dropzone-source2" onclick="document.getElementById('source2').click()">
-              <div class="upload-icon">📄</div>
-              <div class="upload-label">Source 2 – Verification File (PDF)</div>
-              <div class="upload-hint">Drag & drop or click to upload</div>
-              <div class="file-name" id="source2-name"></div>
-              <input type="file" id="source2" name="source2" accept=".pdf" hidden
-                onchange="handleFileSelect(this, 'source2-name')">
+            <div class="form-group">
+              <label for="source2"><i data-lucide="file-check" class="label-icon"></i> Checker File Upload</label>
+              <div class="file-input-wrap" id="dropzone-source2" onclick="document.getElementById('source2').click()" data-testid="input-checker-file">
+                <i data-lucide="upload-cloud" class="file-upload-icon"></i>
+                <span class="file-placeholder">Choose PDF file or drag here</span>
+                <span class="file-name" id="source2-name"></span>
+                <input type="file" id="source2" name="source2" accept=".pdf" hidden
+                  onchange="handleFileSelect(this, 'source2-name')">
+              </div>
             </div>
 
-            <div class="form-field">
-              <label for="description">Description</label>
-              <input type="text" id="description" placeholder="e.g., Q4 2025 Corporate Bond Full Call Processing"
-                class="input-field">
+            <div class="form-group">
+              <label for="description"><i data-lucide="align-left" class="label-icon"></i> Description</label>
+              <input type="text" id="description" placeholder="e.g., Q4 2025 Corporate Bond Processing"
+                class="input-field" data-testid="input-description">
             </div>
 
-            <button type="submit" class="btn-submit" id="submit-btn">
-              <span class="btn-icon">🚀</span> Launch Workflow
+            <button type="submit" class="btn-submit" id="submit-btn" data-testid="button-submit">
+              <i data-lucide="send" class="btn-svg"></i> Submit Workflow
             </button>
           </form>
         </div>
 
-        <!-- Workflow Status Table -->
-        <div class="status-panel glass">
-          <div class="section-header">
-            <h2 class="section-title">
-              <span class="title-icon">⚡</span> Workflow Executions
-            </h2>
-            <button class="btn-refresh" onclick="refreshWorkflows()">🔄</button>
+        <div class="executions-panel card">
+          <div class="card-header">
+            <i data-lucide="activity" class="header-icon"></i>
+            <h2>Workflow Executions</h2>
+            <button class="btn-icon-action" onclick="refreshWorkflows()" data-testid="button-refresh">
+              <i data-lucide="refresh-cw" class="action-svg"></i>
+            </button>
           </div>
-          <div class="workflow-list" id="workflow-list">
+          <div class="workflow-grid" id="workflow-list" data-testid="grid-workflow-list">
             <div class="empty-state">
-              <div class="empty-icon">📭</div>
-              <div class="empty-text">No workflows yet. Upload files to get started!</div>
+              <i data-lucide="inbox" class="empty-svg"></i>
+              <p>No workflows yet. Upload files to get started.</p>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ====== VIEW 2: EVENT MANAGER ====== -->
     <div class="view" id="view-events">
       <div class="events-header">
-        <h2 class="section-title"><span class="title-icon">📋</span> Corporate Action Events</h2>
+        <div class="card-header">
+          <i data-lucide="clipboard-list" class="header-icon"></i>
+          <h2>Corporate Action Events</h2>
+        </div>
         <div class="events-controls">
           <div class="filter-pills">
-            <button class="pill active" onclick="filterEvents('all', this)">All</button>
-            <button class="pill pill-created" onclick="filterEvents('Created', this)">Created</button>
-            <button class="pill pill-verified" onclick="filterEvents('Verified', this)">Verified</button>
-            <button class="pill pill-failed" onclick="filterEvents('Verification Failure', this)">Failed</button>
+            <button class="pill active" onclick="filterEvents('all', this)" data-testid="button-filter-all">All</button>
+            <button class="pill" onclick="filterEvents('Created', this)" data-testid="button-filter-created">Created</button>
+            <button class="pill" onclick="filterEvents('Verified', this)" data-testid="button-filter-verified">Verified</button>
+            <button class="pill" onclick="filterEvents('Verification Failure', this)" data-testid="button-filter-failed">Failed</button>
           </div>
           <div class="search-box">
-            <span class="search-icon">🔍</span>
+            <i data-lucide="search" class="search-svg"></i>
             <input type="text" id="event-search" placeholder="Search CUSIP, Event ID..."
-              oninput="searchEvents(this.value)">
+              oninput="searchEvents(this.value)" data-testid="input-search-events">
           </div>
         </div>
       </div>
-      <div class="table-container glass">
+      <div class="table-container card">
         <table class="data-table" id="events-table">
           <thead>
             <tr>
-              <th onclick="updateEventSort('eventId')" class="sortable">Event ID <span class="sort-icon"
-                  id="sort-eventId"></span></th>
-              <th onclick="updateEventSort('eventType')" class="sortable">Type <span class="sort-icon"
-                  id="sort-eventType"></span></th>
-              <th onclick="updateEventSort('cusip')" class="sortable">CUSIP <span class="sort-icon"
-                  id="sort-cusip"></span></th>
-              <th onclick="updateEventSort('principalRate')" class="sortable">Principal Rate <span class="sort-icon"
-                  id="sort-principalRate"></span></th>
-              <th onclick="updateEventSort('securityCalledAmount')" class="sortable">Called Amount <span
-                  class="sort-icon" id="sort-securityCalledAmount"></span></th>
-              <th onclick="updateEventSort('payableDate')" class="sortable">Payable Date <span class="sort-icon"
-                  id="sort-payableDate"></span></th>
-              <th onclick="updateEventSort('status')" class="sortable">Status <span class="sort-icon"
-                  id="sort-status"></span></th>
-              <th onclick="updateEventSort('createdAt')" class="sortable">Created Date <span class="sort-icon"
-                  id="sort-createdAt"></span></th>
-              <th onclick="updateEventSort('confidenceScore')" class="sortable">Confidence <span class="sort-icon"
-                  id="sort-confidenceScore"></span></th>
+              <th onclick="updateEventSort('eventId')" class="sortable">Event ID <span class="sort-icon" id="sort-eventId"></span></th>
+              <th onclick="updateEventSort('eventType')" class="sortable">Type <span class="sort-icon" id="sort-eventType"></span></th>
+              <th onclick="updateEventSort('cusip')" class="sortable">CUSIP <span class="sort-icon" id="sort-cusip"></span></th>
+              <th onclick="updateEventSort('principalRate')" class="sortable">Principal Rate <span class="sort-icon" id="sort-principalRate"></span></th>
+              <th onclick="updateEventSort('securityCalledAmount')" class="sortable">Called Amount <span class="sort-icon" id="sort-securityCalledAmount"></span></th>
+              <th onclick="updateEventSort('payableDate')" class="sortable">Payable Date <span class="sort-icon" id="sort-payableDate"></span></th>
+              <th onclick="updateEventSort('status')" class="sortable">Status <span class="sort-icon" id="sort-status"></span></th>
+              <th onclick="updateEventSort('createdAt')" class="sortable">Created <span class="sort-icon" id="sort-createdAt"></span></th>
+              <th onclick="updateEventSort('confidenceScore')" class="sortable">Confidence <span class="sort-icon" id="sort-confidenceScore"></span></th>
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="events-tbody">
-          </tbody>
+          <tbody id="events-tbody"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- ====== VIEW 3: DASHBOARD ====== -->
     <div class="view" id="view-dashboard">
-      <h2 class="section-title"><span class="title-icon">📊</span> Analytics Dashboard</h2>
+      <div class="card-header" style="margin-bottom:20px">
+        <i data-lucide="bar-chart-3" class="header-icon"></i>
+        <h2>Analytics Dashboard</h2>
+      </div>
       <div class="dashboard-grid">
-        <div class="dash-card glass">
+        <div class="card dash-card">
           <h3>Events by Type</h3>
           <div class="chart-container" id="chart-by-type"></div>
         </div>
-        <div class="dash-card glass">
+        <div class="card dash-card">
           <h3>Verification Rate</h3>
           <div class="chart-container" id="chart-verification">
             <div class="gauge-wrapper">
               <div class="gauge" id="verification-gauge">
-                <div class="gauge-fill" id="gauge-fill"></div>
                 <div class="gauge-value" id="gauge-value">0%</div>
               </div>
             </div>
           </div>
         </div>
-        <div class="dash-card glass wide">
+        <div class="card dash-card wide">
           <h3>Audit Trail</h3>
           <div class="audit-list" id="audit-list"></div>
         </div>
       </div>
     </div>
 
-    <!-- ====== VIEW 4: BPMN PROCESS VIEWER ====== -->
     <div class="view" id="view-bpmn">
-      <h2 class="section-title"><span class="title-icon">🔀</span> BPMN Process Viewer – CA Event Processing Flow</h2>
-      <div class="bpmn-container glass">
-        <div class="bpmn-diagram" id="bpmn-diagram">
-          <!-- Interactive BPMN-style diagram rendered via JS -->
-        </div>
+      <div class="card-header" style="margin-bottom:20px">
+        <i data-lucide="git-branch" class="header-icon"></i>
+        <h2>BPMN Process Viewer</h2>
+      </div>
+      <div class="card bpmn-container">
+        <div class="bpmn-diagram" id="bpmn-diagram"></div>
         <div class="bpmn-legend">
           <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> Start/End</div>
           <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> AI Processing</div>
@@ -213,12 +219,11 @@
       </div>
     </div>
 
-    <!-- Event Detail Modal -->
     <div class="modal-overlay" id="event-modal" onclick="closeModal()">
-      <div class="modal glass" onclick="event.stopPropagation()">
+      <div class="modal card" onclick="event.stopPropagation()">
         <div class="modal-header">
           <h2 id="modal-title">Event Details</h2>
-          <button class="close-btn" onclick="closeModal()">✕</button>
+          <button class="close-btn" onclick="closeModal()" data-testid="button-close-modal"><i data-lucide="x" class="close-svg"></i></button>
         </div>
         <div class="modal-body" id="modal-body"></div>
       </div>

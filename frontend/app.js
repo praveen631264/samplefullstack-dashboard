@@ -1,62 +1,45 @@
-// ============================================
-// Test orchestrator - Frontend Application
-// ============================================
-
 const API_BASE = window.location.origin;
 const N8N_WEBHOOK_URL = 'https://n8n.aix.devx.systems/webhook-test/cbc9a13e-952e-4708-83d4-eac803e99a93';
-// Dynamically send whatever public URL we are currently accessing the frontend through
 const CALLBACK_BASE_URL = window.location.origin;
 let allWorkflows = [];
 let allEvents = [];
 let currentFilter = 'all';
 let pollingInterval = null;
 
-// ============= VIEW SWITCHING =============
-
 function switchView(view) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(`view-${view}`).classList.add('active');
   document.querySelector(`[data-view="${view}"]`).classList.add('active');
-
   if (view === 'launcher') refreshWorkflows();
   if (view === 'events') loadEvents();
   if (view === 'dashboard') loadDashboard();
   if (view === 'bpmn') renderBPMN();
+  lucide.createIcons();
 }
-
-// ============= THEME =============
-
-function toggleTheme() {
-  document.body.classList.toggle('light-theme');
-  const btn = document.querySelector('.theme-btn');
-  btn.textContent = document.body.classList.contains('light-theme') ? '🌙' : '☀️';
-}
-
-// ============= FILE UPLOAD =============
 
 function handleFileSelect(input, nameId) {
   const nameEl = document.getElementById(nameId);
-  const zone = input.closest('.upload-zone');
+  const zone = input.closest('.file-input-wrap');
   if (input.files.length > 0) {
-    nameEl.textContent = `✅ ${input.files[0].name} (${formatBytes(input.files[0].size)})`;
+    nameEl.textContent = `${input.files[0].name} (${formatBytes(input.files[0].size)})`;
     nameEl.classList.add('visible');
     zone.classList.add('has-file');
   }
 }
 
-// Drag & drop
 document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
+
   ['dropzone-source1', 'dropzone-source2'].forEach(id => {
     const zone = document.getElementById(id);
     if (!zone) return;
     const input = zone.querySelector('input[type=file]');
-
-    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; });
+    zone.addEventListener('dragleave', () => zone.style.borderColor = '');
     zone.addEventListener('drop', e => {
       e.preventDefault();
-      zone.classList.remove('dragover');
+      zone.style.borderColor = '';
       if (e.dataTransfer.files.length > 0) {
         input.files = e.dataTransfer.files;
         handleFileSelect(input, input.id === 'source1' ? 'source1-name' : 'source2-name');
@@ -64,14 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Start polling
   startPolling();
   refreshWorkflows();
   renderBPMN();
 });
-
-// ============= WORKFLOW SUBMISSION =============
-// Uses hidden HTML form POST to n8n webhook (bypasses CORS + sends SSO cookies)
 
 async function submitWorkflow(e) {
   e.preventDefault();
@@ -87,10 +66,9 @@ async function submitWorkflow(e) {
 
   btn.disabled = true;
   btn.classList.add('loading');
-  btn.innerHTML = '<span class="btn-icon">⏳</span> Launching...';
+  btn.textContent = 'Submitting...';
 
   try {
-    // Step 1: Create workflow record in Spring Boot
     const createData = new FormData();
     if (source1Input.files[0]) createData.append('source1', source1Input.files[0]);
     if (source2Input.files[0]) createData.append('source2', source2Input.files[0]);
@@ -100,30 +78,25 @@ async function submitWorkflow(e) {
     const workflow = await res.json();
     const workflowId = workflow.workflowId;
 
-    showToast(`Workflow created: ${workflowId.substring(0, 8)}... Sending to n8n...`, 'info');
+    showToast(`Submission accepted. Your workflow ID: ${workflowId.substring(0, 12)}...`, 'success');
 
-    // Step 2: Send files to n8n via hidden form POST (sends SSO cookies!)
     await submitToN8nViaForm(source1Input, source2Input, workflowId, description);
 
-    showToast('🚀 Workflow sent to n8n! Check Executions tab.', 'success');
-
-    // Step 3: Update status to PARSING
     try {
       await fetch(`${API_BASE}/api/workflows/${workflowId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'PARSING' })
       });
-    } catch (e) { /* non-critical */ }
+    } catch (err) { }
 
-    // Reset form
     document.getElementById('workflow-form').reset();
     ['source1-name', 'source2-name'].forEach(id => {
-      document.getElementById(id).classList.remove('visible');
-      document.getElementById(id).textContent = '';
+      const el = document.getElementById(id);
+      el.classList.remove('visible');
+      el.textContent = '';
     });
-    document.querySelectorAll('.upload-zone').forEach(z => z.classList.remove('has-file'));
-
+    document.querySelectorAll('.file-input-wrap').forEach(z => z.classList.remove('has-file'));
     refreshWorkflows();
   } catch (err) {
     console.error('Workflow error:', err);
@@ -131,29 +104,26 @@ async function submitWorkflow(e) {
   } finally {
     btn.disabled = false;
     btn.classList.remove('loading');
-    btn.innerHTML = '<span class="btn-icon">🚀</span> Launch Workflow';
+    btn.innerHTML = '<i data-lucide="send" class="btn-svg"></i> Submit Workflow';
+    lucide.createIcons();
   }
 }
 
-// Hidden form POST to n8n — bypasses CORS and sends SSO cookies automatically
 function submitToN8nViaForm(source1Input, source2Input, workflowId, description) {
   return new Promise((resolve) => {
-    // Create hidden iframe to capture response (prevents page navigation)
     const iframeName = 'n8n_frame_' + Date.now();
     const iframe = document.createElement('iframe');
     iframe.name = iframeName;
     iframe.style.display = 'none';
     document.body.appendChild(iframe);
 
-    // Build hidden form — same as the working HTML form
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = N8N_WEBHOOK_URL;
     form.enctype = 'multipart/form-data';
-    form.target = iframeName;  // Submit into hidden iframe
+    form.target = iframeName;
     form.style.display = 'none';
 
-    // Add files to the hidden form using DataTransfer (safest way to copy files programmatically)
     if (source1Input.files.length > 0) {
       const newSource1 = document.createElement('input');
       newSource1.type = 'file';
@@ -174,7 +144,6 @@ function submitToN8nViaForm(source1Input, source2Input, workflowId, description)
       form.appendChild(newSource2);
     }
 
-    // Add hidden fields
     const addHidden = (name, value) => {
       const input = document.createElement('input');
       input.type = 'hidden';
@@ -184,14 +153,12 @@ function submitToN8nViaForm(source1Input, source2Input, workflowId, description)
     };
     addHidden('workflowId', workflowId);
     addHidden('description', description || '');
-    addHidden('baseUrl', CALLBACK_BASE_URL); // Send base URL so n8n can route dynamically
+    addHidden('baseUrl', CALLBACK_BASE_URL);
     addHidden('callbackUrl', `${CALLBACK_BASE_URL}/api/workflows/${workflowId}/status`);
 
     document.body.appendChild(form);
 
-    // Clean up after iframe loads
     iframe.onload = () => {
-      console.log('>>> n8n form POST completed');
       setTimeout(() => {
         try { document.body.removeChild(form); } catch (e) { }
         try { document.body.removeChild(iframe); } catch (e) { }
@@ -199,15 +166,11 @@ function submitToN8nViaForm(source1Input, source2Input, workflowId, description)
       resolve(true);
     };
 
-    console.log('>>> Submitting hidden form to n8n:', N8N_WEBHOOK_URL);
     form.submit();
-
-    // Fallback timeout
     setTimeout(() => { resolve(true); }, 15000);
   });
 }
 
-// ============= SORTING STATE =============
 let workflowSort = { field: 'createdAt', dir: 'desc' };
 let eventSort = { field: 'createdAt', dir: 'desc' };
 
@@ -215,17 +178,13 @@ function performSort(array, sortKey, direction) {
   return array.sort((a, b) => {
     let valA = a[sortKey];
     let valB = b[sortKey];
-
     if (typeof valA === 'string') valA = valA.toLowerCase();
     if (typeof valB === 'string') valB = valB.toLowerCase();
-
     if (valA < valB) return direction === 'asc' ? -1 : 1;
     if (valA > valB) return direction === 'asc' ? 1 : -1;
     return 0;
   });
 }
-
-// ============= WORKFLOW LIST =============
 
 async function refreshWorkflows() {
   try {
@@ -238,56 +197,96 @@ async function refreshWorkflows() {
   }
 }
 
+const WORKFLOW_STEPS = [
+  { key: 'STARTED', label: 'Agent Started', icon: 'play' },
+  { key: 'PARSING', label: 'Creation in Progress', icon: 'cog' },
+  { key: 'VERIFYING', label: 'Verification in Progress', icon: 'shield-check' },
+  { key: 'COMPLETED', label: 'Completed', icon: 'check-circle-2' }
+];
+
+function getStepIndex(status) {
+  if (status === 'STARTED') return 0;
+  if (status === 'PARSING' || status === 'EVENT_CREATED') return 1;
+  if (status === 'VERIFYING') return 2;
+  if (status === 'COMPLETED') return 3;
+  if (status === 'COMPLETED_WITH_FAILURE' || status === 'FAILED') return -1;
+  return 0;
+}
+
+function buildProgressBar(wf) {
+  const stepIdx = getStepIndex(wf.status);
+  const isFailed = wf.status === 'FAILED' || wf.status === 'COMPLETED_WITH_FAILURE';
+  const isComplete = wf.status === 'COMPLETED';
+  const fillPct = isComplete ? 100 : isFailed ? 0 : (stepIdx / (WORKFLOW_STEPS.length - 1)) * 100;
+
+  const createdTime = formatShortTime(wf.createdAt);
+  const updatedTime = formatShortTime(wf.updatedAt);
+
+  let stepsHtml = WORKFLOW_STEPS.map((step, i) => {
+    let dotClass = '';
+    let labelClass = '';
+    let timeStr = '';
+
+    if (isFailed) {
+      dotClass = i === 0 ? 'done' : (i <= 1 ? 'error' : '');
+      if (i === 0) timeStr = createdTime;
+    } else if (i < stepIdx) {
+      dotClass = 'done';
+      if (i === 0) timeStr = createdTime;
+    } else if (i === stepIdx) {
+      dotClass = isComplete ? 'done' : 'active';
+      labelClass = isComplete ? 'done' : 'active';
+      timeStr = i === 0 ? createdTime : updatedTime;
+    }
+
+    const iconName = (dotClass === 'error') ? 'x' : (dotClass === 'done' ? 'check' : step.icon);
+
+    return `<div class="progress-step">
+      <div class="step-dot ${dotClass}"><i data-lucide="${iconName}"></i></div>
+      <div class="step-label ${labelClass}">${step.label}</div>
+      ${timeStr ? `<div class="step-time">${timeStr}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  return `<div class="progress-bar-wrap">
+    <div class="progress-steps">
+      <div class="progress-line"><div class="progress-line-fill" style="width:${fillPct}%"></div></div>
+      ${stepsHtml}
+    </div>
+  </div>`;
+}
+
 function renderWorkflowList() {
   const list = document.getElementById('workflow-list');
   if (!allWorkflows.length) {
-    list.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">📭</div>
-        <div class="empty-text">No workflows yet. Upload files to get started!</div>
-      </div>`;
+    list.innerHTML = `<div class="empty-state"><i data-lucide="inbox" class="empty-svg"></i><p>No workflows yet. Upload files to get started.</p></div>`;
+    lucide.createIcons();
     return;
   }
 
-  // Generate sort controls and apply sort
-  let html = `
-    <div class="wf-sort-controls" style="margin-bottom: 20px; display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
-      <span style="font-size: 14px; font-weight: 500; color: var(--text-muted)">Sort by:</span>
-      <select onchange="updateWFSort('field', this.value)" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-normal);">
-        <option value="createdAt" ${workflowSort.field === 'createdAt' ? 'selected' : ''}>Created Date</option>
-        <option value="status" ${workflowSort.field === 'status' ? 'selected' : ''}>Status</option>
-        <option value="eventType" ${workflowSort.field === 'eventType' ? 'selected' : ''}>Event Type</option>
-      </select>
-      <button onclick="updateWFSort('dir', '${workflowSort.dir === 'desc' ? 'asc' : 'desc'}')" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-surface); color: var(--text-normal); cursor: pointer;">
-        ${workflowSort.dir === 'desc' ? '⬇️ Desc' : '⬆️ Asc'}
-      </button>
-    </div>
-  `;
-
   const sortedWF = performSort([...allWorkflows], workflowSort.field, workflowSort.dir);
 
-  html += sortedWF.map(wf => `
-    <div class="workflow-card" onclick="viewWorkflowEvent('${wf.eventId || ''}', '${wf.workflowId}')">
-      <div class="wf-info">
-        <div class="wf-id">${wf.workflowId.substring(0, 8)}...</div>
-        <div class="wf-desc">${wf.description || 'No description'}</div>
-        <div class="wf-files">📊 ${wf.source1FileName || 'N/A'} &nbsp;|&nbsp; 📄 ${wf.source2FileName || 'N/A'}</div>
-        ${wf.cusip ? `<div class="wf-files">ID: <strong>${wf.cusip}</strong> &nbsp; Type: <span class="type-badge type-${getTypeClass(wf.eventType)}">${wf.eventType || 'Detecting...'}</span></div>` : ''}
-        <div class="wf-time">${formatDetailedTime(wf.createdAt)} (${timeAgo(wf.createdAt)})</div>
+  list.innerHTML = sortedWF.map(wf => `
+    <div class="wf-card" onclick="viewWorkflowEvent('${wf.eventId || ''}', '${wf.workflowId}')" data-testid="card-workflow-${wf.workflowId.substring(0,8)}">
+      <div class="wf-card-top">
+        <div class="wf-card-info">
+          <div class="wf-id">${wf.workflowId.substring(0, 12)}...</div>
+          <div class="wf-desc">${wf.description || 'No description'}</div>
+          <div class="wf-files">
+            <i data-lucide="file-spreadsheet" class="wf-files-svg"></i> ${wf.source1FileName || 'N/A'}
+            <span style="color:var(--text-muted);margin:0 4px">|</span>
+            <i data-lucide="file-check" class="wf-files-svg"></i> ${wf.source2FileName || 'N/A'}
+          </div>
+          ${wf.cusip ? `<div class="wf-files">ID: <strong>${wf.cusip}</strong> &nbsp; <span class="type-badge type-${getTypeClass(wf.eventType)}">${wf.eventType || 'Detecting...'}</span></div>` : ''}
+          <div class="wf-time">${formatDetailedTime(wf.createdAt)} (${timeAgo(wf.createdAt)})</div>
+        </div>
+        <span class="status-badge status-${wf.status}">${formatStatus(wf.status)}</span>
       </div>
-      <div class="wf-status">
-        <span class="status-badge status-${wf.status}">${getStatusIcon(wf.status)} ${formatStatus(wf.status)}</span>
-      </div>
+      ${buildProgressBar(wf)}
     </div>
   `).join('');
 
-  list.innerHTML = html;
-}
-
-function updateWFSort(type, value) {
-  if (type === 'field') workflowSort.field = value;
-  if (type === 'dir') workflowSort.dir = value;
-  renderWorkflowList();
+  lucide.createIcons();
 }
 
 function updateStats() {
@@ -305,14 +304,8 @@ function updateStats() {
 function animateValue(id, target) {
   const el = document.getElementById(id);
   if (!el) return;
-  const current = parseInt(el.textContent) || 0;
-  if (current === target) return;
   el.textContent = target;
-  el.style.transform = 'scale(1.2)';
-  setTimeout(() => el.style.transform = 'scale(1)', 200);
 }
-
-// ============= EVENTS =============
 
 async function loadEvents() {
   try {
@@ -328,11 +321,9 @@ async function loadEvents() {
 
 function renderEventsTable() {
   const tbody = document.getElementById('events-tbody');
-
-  // Update header arrows
   document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '');
   const activeIcon = document.getElementById(`sort-${eventSort.field}`);
-  if (activeIcon) activeIcon.textContent = eventSort.dir === 'desc' ? '⬇️' : '⬆️';
+  if (activeIcon) activeIcon.textContent = eventSort.dir === 'desc' ? ' \u2193' : ' \u2191';
 
   if (!allEvents.length) {
     tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted)">No events found</td></tr>';
@@ -343,18 +334,16 @@ function renderEventsTable() {
 
   tbody.innerHTML = sortedEvents.map(ev => `
     <tr>
-      <td><code style="font-size:12px">${ev.eventId}</code></td>
+      <td><code style="font-size:11px;background:var(--bg-body);padding:2px 6px;border-radius:3px">${ev.eventId}</code></td>
       <td><span class="type-badge type-${getTypeClass(ev.eventType)}">${ev.eventType}</span></td>
       <td><strong>${ev.cusip}</strong></td>
       <td>${ev.principalRate?.toFixed(2) || '-'}</td>
       <td>${ev.securityCalledAmount ? ev.securityCalledAmount.toLocaleString() : '-'}</td>
       <td>${ev.payableDate || '-'}</td>
       <td><span class="status-badge status-${ev.status?.replace(/\s/g, '-')}">${ev.status}</span></td>
-      <td><span style="font-size: 11px; color: var(--text-muted);">${formatDetailedTime(ev.createdAt)}</span></td>
+      <td style="font-size:11px;color:var(--text-muted)">${formatDetailedTime(ev.createdAt)}</td>
       <td>${ev.confidenceScore ? `${(ev.confidenceScore * 100).toFixed(0)}%` : '-'}</td>
-      <td class="actions-cell">
-        <button class="btn-view" onclick="viewEventDetail('${ev.eventId}')">View</button>
-      </td>
+      <td><button class="btn-view" onclick="viewEventDetail('${ev.eventId}')" data-testid="button-view-event-${ev.eventId}">View</button></td>
     </tr>
   `).join('');
 }
@@ -383,14 +372,11 @@ function searchEvents(query) {
     (ev.eventId?.toLowerCase().includes(query.toLowerCase())) ||
     (ev.eventType?.toLowerCase().includes(query.toLowerCase()))
   );
-  const tbody = document.getElementById('events-tbody');
   const temp = allEvents;
   allEvents = filtered;
   renderEventsTable();
   allEvents = temp;
 }
-
-// ============= EVENT DETAIL MODAL =============
 
 async function viewEventDetail(eventId) {
   try {
@@ -413,14 +399,8 @@ async function viewEventDetail(eventId) {
       </div>
       ${ev.source1Data || ev.source2Data ? `
         <div class="source-comparison">
-          <div class="source-box">
-            <h4>📊 Source 1 (XLSX)</h4>
-            <pre>${formatJSON(ev.source1Data)}</pre>
-          </div>
-          <div class="source-box">
-            <h4>📄 Source 2 (PDF)</h4>
-            <pre>${formatJSON(ev.source2Data)}</pre>
-          </div>
+          <div class="source-box"><h4>Source 1 (Maker)</h4><pre>${formatJSON(ev.source1Data)}</pre></div>
+          <div class="source-box"><h4>Source 2 (Checker)</h4><pre>${formatJSON(ev.source2Data)}</pre></div>
         </div>
       ` : ''}
     `;
@@ -441,8 +421,6 @@ function closeModal() {
   document.getElementById('event-modal').classList.remove('active');
 }
 
-// ============= DASHBOARD =============
-
 async function loadDashboard() {
   try {
     const [statsRes, auditRes] = await Promise.all([
@@ -451,7 +429,6 @@ async function loadDashboard() {
     ]);
     const stats = await statsRes.json();
     const audits = await auditRes.json();
-
     renderTypeChart(stats.byType);
     renderVerificationGauge(stats.byStatus);
     renderAuditTrail(audits);
@@ -463,19 +440,16 @@ async function loadDashboard() {
 function renderTypeChart(byType) {
   const container = document.getElementById('chart-by-type');
   if (!byType || !byType.length) {
-    container.innerHTML = '<div class="empty-state"><div class="empty-text">No data yet</div></div>';
+    container.innerHTML = '<div class="empty-state"><p>No data yet</p></div>';
     return;
   }
   const max = Math.max(...byType.map(t => t.count));
-  const colors = { 'Full Call': '#ef4444', 'Partial Call': '#f59e0b', 'Redemption': '#3b82f6', 'Reorg': '#8b5cf6' };
-
+  const colors = { 'Full Call': '#dc2626', 'Partial Call': '#d97706', 'Redemption': '#2563eb', 'Reorg': '#7c3aed' };
   container.innerHTML = `<div class="chart-bar-group">${byType.map(t => `
     <div class="chart-bar-item">
       <div class="chart-bar-label">${t.event_type}</div>
       <div class="chart-bar-track">
-        <div class="chart-bar-fill" style="width:${(t.count / max * 100)}%;background:${colors[t.event_type] || '#6366f1'}">
-          ${t.count}
-        </div>
+        <div class="chart-bar-fill" style="width:${(t.count / max * 100)}%;background:${colors[t.event_type] || '#4f46e5'}">${t.count}</div>
       </div>
     </div>
   `).join('')}</div>`;
@@ -486,9 +460,8 @@ function renderVerificationGauge(byStatus) {
   const total = byStatus.reduce((s, b) => s + b.count, 0);
   const verified = byStatus.find(b => b.status === 'Verified')?.count || 0;
   const pct = total > 0 ? Math.round((verified / total) * 100) : 0;
-
   const gauge = document.querySelector('.gauge');
-  if (gauge) gauge.style.background = `conic-gradient(var(--success) ${pct * 3.6}deg, var(--bg-elevated) ${pct * 3.6}deg)`;
+  if (gauge) gauge.style.background = `conic-gradient(var(--success) ${pct * 3.6}deg, var(--bg-body) ${pct * 3.6}deg)`;
   const value = document.getElementById('gauge-value');
   if (value) value.textContent = `${pct}%`;
 }
@@ -496,21 +469,19 @@ function renderVerificationGauge(byStatus) {
 function renderAuditTrail(audits) {
   const container = document.getElementById('audit-list');
   if (!audits || !audits.length) {
-    container.innerHTML = '<div class="empty-state"><div class="empty-text">No audit entries yet</div></div>';
+    container.innerHTML = '<div class="empty-state"><p>No audit entries yet</p></div>';
     return;
   }
-
   const actionColors = {
-    'WORKFLOW_CREATED': '#3b82f6', 'N8N_TRIGGERED': '#6366f1',
-    'STATUS_PARSING': '#f59e0b', 'STATUS_EVENT_CREATED': '#10b981',
-    'STATUS_VERIFYING': '#8b5cf6', 'STATUS_COMPLETED': '#10b981',
-    'EVENT_CREATED': '#10b981', 'EVENT_UPDATED': '#6366f1',
-    'STATUS_FAILED': '#ef4444', 'N8N_TRIGGER_FAILED': '#ef4444'
+    'WORKFLOW_CREATED': '#2563eb', 'N8N_TRIGGERED': '#4f46e5',
+    'STATUS_PARSING': '#d97706', 'STATUS_EVENT_CREATED': '#059669',
+    'STATUS_VERIFYING': '#7c3aed', 'STATUS_COMPLETED': '#059669',
+    'EVENT_CREATED': '#059669', 'EVENT_UPDATED': '#4f46e5',
+    'STATUS_FAILED': '#dc2626', 'N8N_TRIGGER_FAILED': '#dc2626'
   };
-
   container.innerHTML = audits.slice(0, 30).map(a => `
     <div class="audit-item">
-      <div class="audit-dot" style="background:${actionColors[a.action] || '#64748b'}"></div>
+      <div class="audit-dot" style="background:${actionColors[a.action] || '#94a3b8'}"></div>
       <div class="audit-action">${a.action}</div>
       <div class="audit-details">${a.details || ''}</div>
       <div class="audit-time">${timeAgo(a.createdAt)}</div>
@@ -518,68 +489,60 @@ function renderAuditTrail(audits) {
   `).join('');
 }
 
-// ============= BPMN VIEWER =============
-
 function renderBPMN() {
   const container = document.getElementById('bpmn-diagram');
   container.innerHTML = `
     <div class="bpmn-flow">
-      ${bpmnNode('circle', '▶', 'Start', '#3b82f6')}
+      ${bpmnNode('circle', '\u25B6', 'Start', '#3b82f6')}
       ${bpmnArrow()}
-      ${bpmnNode('rect', '📂', 'Receive Files\\n(Webhook)', '#3b82f6')}
+      ${bpmnNode('rect', '\uD83D\uDCC2', 'Receive Files', '#3b82f6')}
       ${bpmnArrow()}
-      ${bpmnNode('diamond', '⊕', 'Parallel\\nGateway', '#6366f1')}
+      ${bpmnNode('diamond', '\u2295', 'Parallel\nGateway', '#6366f1')}
       ${bpmnArrow()}
       <div class="bpmn-parallel-group">
-        <div class="bpmn-parallel-label">⚡ PARALLEL EXECUTION</div>
+        <div class="bpmn-parallel-label">PARALLEL EXECUTION</div>
         <div class="bpmn-parallel-row">
-          ${bpmnNode('rect', '📊', 'Parse XLSX\\n(Source 1)', '#f59e0b')}
+          ${bpmnNode('rect', '\uD83D\uDCCA', 'Parse XLSX', '#f59e0b')}
           ${bpmnArrow()}
-          ${bpmnNode('rect', '🤖', 'AI Extract\\nJSON', '#f59e0b')}
+          ${bpmnNode('rect', '\uD83E\uDD16', 'AI Extract', '#f59e0b')}
           ${bpmnArrow()}
-          ${bpmnNode('diamond', '?', 'Event Type\\nRouter', '#8b5cf6')}
+          ${bpmnNode('diamond', '?', 'Event Type\nRouter', '#8b5cf6')}
         </div>
         <div class="bpmn-parallel-row">
-          ${bpmnNode('rect', '📄', 'Parse PDF\\n(Source 2)', '#f59e0b')}
+          ${bpmnNode('rect', '\uD83D\uDCC4', 'Parse PDF', '#f59e0b')}
           ${bpmnArrow()}
-          ${bpmnNode('rect', '🤖', 'AI Extract\\nJSON', '#f59e0b')}
+          ${bpmnNode('rect', '\uD83E\uDD16', 'AI Extract', '#f59e0b')}
         </div>
       </div>
       ${bpmnArrow()}
-      ${bpmnNode('rect', '💾', 'Create\\nEvent', '#10b981')}
+      ${bpmnNode('rect', '\uD83D\uDCBE', 'Create\nEvent', '#10b981')}
       ${bpmnArrow()}
-      ${bpmnNode('diamond', '⊕', 'Merge\\nGateway', '#6366f1')}
+      ${bpmnNode('diamond', '\u2295', 'Merge', '#6366f1')}
       ${bpmnArrow()}
-      ${bpmnNode('rect', '⚖️', 'Compare\\nS1 vs S2', '#8b5cf6')}
+      ${bpmnNode('rect', '\u2696\uFE0F', 'Compare\nS1 vs S2', '#8b5cf6')}
       ${bpmnArrow()}
       ${bpmnNode('diamond', '?', 'Match?', '#f59e0b')}
       ${bpmnArrow()}
-      ${bpmnNode('rect', '✅', 'Update\\nStatus', '#10b981')}
+      ${bpmnNode('rect', '\u2705', 'Update\nStatus', '#10b981')}
       ${bpmnArrow()}
-      ${bpmnNode('rect', '📢', 'Status\\nCallback', '#3b82f6')}
+      ${bpmnNode('rect', '\uD83D\uDCE2', 'Callback', '#3b82f6')}
       ${bpmnArrow()}
-      ${bpmnNode('circle', '⏹', 'End', '#10b981')}
+      ${bpmnNode('circle', '\u23F9', 'End', '#10b981')}
     </div>
   `;
 }
 
 function bpmnNode(shape, icon, label, color) {
   const shapeClass = shape === 'circle' ? 'circle' : shape === 'diamond' ? 'diamond' : '';
-  return `
-    <div class="bpmn-node">
-      <div class="bpmn-shape ${shapeClass}" style="background:${color}20;border:2px solid ${color}">
-        <span>${icon}</span>
-      </div>
-      <div class="bpmn-node-label">${label.replace(/\\n/g, '<br>')}</div>
-    </div>
-  `;
+  return `<div class="bpmn-node">
+    <div class="bpmn-shape ${shapeClass}" style="background:${color}10;border:2px solid ${color}"><span>${icon}</span></div>
+    <div class="bpmn-node-label">${label.replace(/\n/g, '<br>')}</div>
+  </div>`;
 }
 
 function bpmnArrow() {
-  return '<div class="bpmn-arrow">→</div>';
+  return '<div class="bpmn-arrow">\u2192</div>';
 }
-
-// ============= POLLING =============
 
 function startPolling() {
   if (pollingInterval) clearInterval(pollingInterval);
@@ -589,21 +552,11 @@ function startPolling() {
   }, 3000);
 }
 
-// ============= UTILITIES =============
-
-function getStatusIcon(status) {
-  const icons = {
-    'STARTED': '🔵', 'PARSING': '🟡', 'EVENT_CREATED': '🟢',
-    'VERIFYING': '🔵', 'COMPLETED': '✅', 'COMPLETED_WITH_FAILURE': '❌', 'FAILED': '❌'
-  };
-  return icons[status] || '⚪';
-}
-
 function formatStatus(status) {
   const labels = {
-    'STARTED': 'Started', 'PARSING': 'Parsing Files...',
-    'EVENT_CREATED': 'Event Created', 'VERIFYING': 'Verifying...',
-    'COMPLETED': 'Completed', 'COMPLETED_WITH_FAILURE': 'Completed (Issues)', 'FAILED': 'Failed'
+    'STARTED': 'Started', 'PARSING': 'In Progress',
+    'EVENT_CREATED': 'Event Created', 'VERIFYING': 'Verifying',
+    'COMPLETED': 'Completed', 'COMPLETED_WITH_FAILURE': 'Failed', 'FAILED': 'Failed'
   };
   return labels[status] || status;
 }
@@ -639,8 +592,13 @@ function formatBytes(bytes) {
 
 function formatDetailedTime(dateStr) {
   if (!dateStr) return '';
-  const date = new Date(dateStr);
-  return date.toLocaleString();
+  return new Date(dateStr).toLocaleString();
+}
+
+function formatShortTime(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 function formatJSON(data) {
@@ -653,17 +611,8 @@ function formatJSON(data) {
 
 function showToast(message, type = 'info') {
   const toast = document.createElement('div');
-  const colors = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
-  toast.style.cssText = `
-    position:fixed;top:80px;right:24px;z-index:9999;
-    padding:14px 24px;border-radius:8px;
-    background:${colors[type]};color:white;
-    font-size:14px;font-weight:500;font-family:Inter,sans-serif;
-    box-shadow:0 10px 40px rgba(0,0,0,0.3);
-    animation:slideIn 0.3s ease;
-    max-width:400px;
-  `;
+  toast.className = `toast toast-${type}`;
   toast.textContent = message;
   document.body.appendChild(toast);
-  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 4000);
 }
