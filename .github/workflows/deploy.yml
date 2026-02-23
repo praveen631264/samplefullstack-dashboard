@@ -46,6 +46,10 @@ jobs:
           # Rename JAR for consistency
           mv target/*.jar ./app.jar
           
+          # Diagnostics and JAR inspection
+          ls -R
+          jar tf app.jar | grep AgentController || echo "AgentController NOT in JAR"
+          
           # Clean up temporary upload structure
           rm -rf target
           
