@@ -47,7 +47,7 @@
     </nav>
 
     <div class="view active" id="view-launcher">
-      <div class="launcher-grid">
+      <div class="create-event-layout">
         <div class="form-panel card">
           <div class="card-header">
             <i data-lucide="plus-circle" class="header-icon"></i>
@@ -88,20 +88,7 @@
           </form>
         </div>
 
-        <div class="executions-panel card">
-          <div class="card-header">
-            <i data-lucide="activity" class="header-icon"></i>
-            <h2>Workflow Executions</h2>
-            <button class="btn-icon-action" onclick="refreshWorkflows()" data-testid="button-refresh">
-              <i data-lucide="refresh-cw" class="action-svg"></i>
-            </button>
-          </div>
-          <div class="workflow-grid" id="workflow-list" data-testid="grid-workflow-list">
-            <div class="empty-state">
-              <i data-lucide="inbox" class="empty-svg"></i>
-              <p>No workflows yet. Upload files to get started.</p>
-            </div>
-          </div>
+        <div id="submitted-workflow-card" class="submitted-card card" style="display:none;" data-testid="card-submitted-workflow">
         </div>
       </div>
     </div>

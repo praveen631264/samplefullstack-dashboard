@@ -5,13 +5,14 @@ let allWorkflows = [];
 let allEvents = [];
 let currentFilter = 'all';
 let pollingInterval = null;
+let submittedWorkflowId = null;
 
 function switchView(view) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(`view-${view}`).classList.add('active');
   document.querySelector(`[data-view="${view}"]`).classList.add('active');
-  if (view === 'launcher') refreshWorkflows();
+  if (view === 'launcher' && submittedWorkflowId) pollSubmittedWorkflow();
   if (view === 'events') loadEvents();
   if (view === 'dashboard') loadDashboard();
   if (view === 'bpmn') renderBPMN();
@@ -48,7 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   startPolling();
-  refreshWorkflows();
   renderBPMN();
 });
 
@@ -80,6 +80,9 @@ async function submitWorkflow(e) {
 
     showToast(`Submission accepted. Your workflow ID: ${workflowId.substring(0, 12)}...`, 'success');
 
+    submittedWorkflowId = workflowId;
+    showSubmittedCard(workflow);
+
     await submitToN8nViaForm(source1Input, source2Input, workflowId, description);
 
     try {
@@ -97,14 +100,14 @@ async function submitWorkflow(e) {
       el.textContent = '';
     });
     document.querySelectorAll('.file-input-wrap').forEach(z => z.classList.remove('has-file'));
-    refreshWorkflows();
+    pollSubmittedWorkflow();
   } catch (err) {
     console.error('Workflow error:', err);
     showToast(`Error: ${err.message}`, 'error');
   } finally {
     btn.disabled = false;
     btn.classList.remove('loading');
-    btn.innerHTML = '<i data-lucide="send" class="btn-svg"></i> Submit Workflow';
+    btn.innerHTML = '<i data-lucide="send" class="btn-svg"></i> Submit';
     lucide.createIcons();
   }
 }
@@ -169,6 +172,78 @@ function submitToN8nViaForm(source1Input, source2Input, workflowId, description)
     form.submit();
     setTimeout(() => { resolve(true); }, 15000);
   });
+}
+
+function showSubmittedCard(wf) {
+  const card = document.getElementById('submitted-workflow-card');
+  card.style.display = 'block';
+  renderSubmittedCard(wf);
+}
+
+function renderSubmittedCard(wf) {
+  const card = document.getElementById('submitted-workflow-card');
+  const statusMap = {
+    'STARTED': 'Started', 'PARSING': 'In Progress',
+    'EVENT_CREATED': 'Event Created', 'VERIFYING': 'Verifying',
+    'COMPLETED': 'Completed', 'COMPLETED_WITH_FAILURE': 'Failed', 'FAILED': 'Failed'
+  };
+  const statusLabel = statusMap[wf.status] || wf.status;
+  const isComplete = wf.status === 'COMPLETED';
+  const isFailed = wf.status === 'FAILED' || wf.status === 'COMPLETED_WITH_FAILURE';
+  const statusClass = isComplete ? 'status-completed' : isFailed ? 'status-failed' : 'status-progress';
+
+  card.innerHTML = `
+    <div class="card-header">
+      <i data-lucide="activity" class="header-icon"></i>
+      <h2>Submitted Event Status</h2>
+    </div>
+    <div class="submitted-card-body">
+      <div class="submitted-info-row">
+        <span class="submitted-label">Workflow ID</span>
+        <span class="submitted-value" data-testid="text-submitted-id">${wf.workflowId.substring(0, 16)}...</span>
+      </div>
+      <div class="submitted-info-row">
+        <span class="submitted-label">Description</span>
+        <span class="submitted-value" data-testid="text-submitted-desc">${wf.description || 'No description'}</span>
+      </div>
+      <div class="submitted-info-row">
+        <span class="submitted-label">Source 1</span>
+        <span class="submitted-value">${wf.source1FileName || '—'}</span>
+      </div>
+      <div class="submitted-info-row">
+        <span class="submitted-label">Source 2</span>
+        <span class="submitted-value">${wf.source2FileName || '—'}</span>
+      </div>
+      <div class="submitted-info-row">
+        <span class="submitted-label">Status</span>
+        <span class="submitted-status ${statusClass}" data-testid="text-submitted-status">
+          <i data-lucide="${isComplete ? 'check-circle-2' : isFailed ? 'alert-circle' : 'loader'}" class="status-icon-sm"></i>
+          ${statusLabel}
+        </span>
+      </div>
+      ${buildProgressBar(wf)}
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+function pollSubmittedWorkflow() {
+  if (!submittedWorkflowId) return;
+  const interval = setInterval(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/workflows`);
+      const workflows = await res.json();
+      const wf = workflows.find(w => w.workflowId === submittedWorkflowId);
+      if (wf) {
+        renderSubmittedCard(wf);
+        if (wf.status === 'COMPLETED' || wf.status === 'FAILED' || wf.status === 'COMPLETED_WITH_FAILURE') {
+          clearInterval(interval);
+        }
+      }
+    } catch (err) {
+      console.error('Poll error:', err);
+    }
+  }, 3000);
 }
 
 let workflowSort = { field: 'createdAt', dir: 'desc' };

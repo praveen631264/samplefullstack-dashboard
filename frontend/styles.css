@@ -106,8 +106,18 @@ body {
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
 
-.launcher-grid { display: grid; grid-template-columns: 400px 1fr; gap: 20px; align-items: start; }
-@media (max-width: 1024px) { .launcher-grid { grid-template-columns: 1fr; } }
+.create-event-layout { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+.submitted-card-body { padding: 20px; }
+.submitted-info-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+.submitted-info-row:last-of-type { border-bottom: none; }
+.submitted-label { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+.submitted-value { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.submitted-status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+.submitted-status.status-completed { background: var(--success-light); color: var(--success); }
+.submitted-status.status-failed { background: var(--danger-light); color: var(--danger); }
+.submitted-status.status-progress { background: var(--warning-light); color: var(--warning); }
+.status-icon-sm { width: 14px; height: 14px; }
 
 .card-header {
   display: flex; align-items: center; gap: 10px;
