@@ -86,8 +86,6 @@ async function submitWorkflow(e) {
   const btn = document.getElementById('submit-btn');
   const source1Input = document.getElementById('source1');
   const source2Input = document.getElementById('source2');
-  const descEl = document.getElementById('description');
-  const description = descEl ? descEl.value : '';
   const agentSelect = document.getElementById('agent-select');
   const selectedAgentId = agentSelect ? agentSelect.value : '';
 
@@ -104,8 +102,6 @@ async function submitWorkflow(e) {
     const createData = new FormData();
     if (source1Input.files[0]) createData.append('source1', source1Input.files[0]);
     if (source2Input.files[0]) createData.append('source2', source2Input.files[0]);
-    createData.append('description', description);
-
     const res = await fetch(`${API_BASE}/api/workflows`, { method: 'POST', body: createData });
     const workflow = await res.json();
     const workflowId = workflow.workflowId;
@@ -121,7 +117,7 @@ async function submitWorkflow(e) {
         await submitAgentCombinedViaForm(source1Input, source2Input, workflowId, agent);
       }
     } else {
-      await submitToN8nViaForm(source1Input, source2Input, workflowId, description);
+      await submitToN8nViaForm(source1Input, source2Input, workflowId);
     }
 
     try {
@@ -151,7 +147,7 @@ async function submitWorkflow(e) {
   }
 }
 
-function submitToN8nViaForm(source1Input, source2Input, workflowId, description) {
+function submitToN8nViaForm(source1Input, source2Input, workflowId) {
   return new Promise((resolve) => {
     const iframeName = 'n8n_frame_' + Date.now();
     const iframe = document.createElement('iframe');
@@ -194,7 +190,6 @@ function submitToN8nViaForm(source1Input, source2Input, workflowId, description)
       form.appendChild(input);
     };
     addHidden('workflowId', workflowId);
-    addHidden('description', description || '');
     addHidden('baseUrl', CALLBACK_BASE_URL);
     addHidden('callbackUrl', `${CALLBACK_BASE_URL}/api/workflows/${workflowId}/status`);
 
@@ -314,10 +309,6 @@ function renderSubmittedCard(wf) {
       <div class="submitted-info-row">
         <span class="submitted-label">Workflow ID</span>
         <span class="submitted-value" data-testid="text-submitted-id">${wf.workflowId}</span>
-      </div>
-      <div class="submitted-info-row">
-        <span class="submitted-label">Description</span>
-        <span class="submitted-value" data-testid="text-submitted-desc">${wf.description || 'No description'}</span>
       </div>
       <div class="submitted-info-row">
         <span class="submitted-label">Source 1</span>
@@ -462,7 +453,6 @@ function renderWorkflowList() {
       <div class="wf-card-top">
         <div class="wf-card-info">
           <div class="wf-id">${wf.workflowId.substring(0, 12)}...</div>
-          <div class="wf-desc">${wf.description || 'No description'}</div>
           <div class="wf-files">
             <i data-lucide="file-spreadsheet" class="wf-files-svg"></i> ${wf.source1FileName || 'N/A'}
             <span style="color:var(--text-muted);margin:0 4px">|</span>
