@@ -1,6 +1,7 @@
 const API_BASE = window.location.origin;
 const N8N_WEBHOOK_URL = 'https://n8n.aix.devx.systems/webhook/cbc9a13e-952e-4708-83d4-eac803e99a93';
 const N8N_TRAINER_WEBHOOK_URL = 'https://n8n.aix.devx.systems/webhook/trainer-micro';
+const N8N_COMPARE_WEBHOOK_URL = 'https://n8n.aix.devx.systems/webhook/compare-micro';
 const CALLBACK_BASE_URL = window.location.origin;
 let allWorkflows = [];
 let allEvents = [];
@@ -729,9 +730,11 @@ function submitTrainerViaBrowserForm(sessionId, type, prompt, file) {
     iframe.style.display = 'none';
     document.body.appendChild(iframe);
 
+    const webhookUrl = (type === 'compare') ? N8N_COMPARE_WEBHOOK_URL : N8N_TRAINER_WEBHOOK_URL;
+
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = N8N_TRAINER_WEBHOOK_URL;
+    form.action = webhookUrl;
     form.enctype = 'multipart/form-data';
     form.target = iframeName;
     form.style.display = 'none';
