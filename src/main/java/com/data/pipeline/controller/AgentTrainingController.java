@@ -33,6 +33,9 @@ public class AgentTrainingController {
     @Value("${app.n8n.trainer-webhook-url:https://n8n.aix.devx.systems/webhook/trainer-micro}")
     private String n8nTrainerUrl;
 
+    @Value("${app.n8n.compare-webhook-url:https://n8n.aix.devx.systems/webhook/compare-micro}")
+    private String n8nCompareUrl;
+
     @Value("${app.n8n.api-token:}")
     private String n8nApiToken;
 
@@ -66,7 +69,8 @@ public class AgentTrainingController {
 
         session.setStatus(type.toUpperCase() + "_PROCESSING");
 
-        log.info("Training check initiated: sessionId={}, type={}, webhookUrl={}", sessionId, type, n8nTrainerUrl);
+        String targetWebhookUrl = "compare".equals(type) ? n8nCompareUrl : n8nTrainerUrl;
+        log.info("Training check initiated: sessionId={}, type={}, webhookUrl={}", sessionId, type, targetWebhookUrl);
 
         try {
             RestTemplate restTemplate = new RestTemplate();
@@ -86,6 +90,11 @@ public class AgentTrainingController {
             body.add("prompt", prompt);
             body.add("baseUrl", callbackBaseUrl);
 
+            if ("compare".equals(type)) {
+                body.add("makerResult", session.getMakerResult() != null ? session.getMakerResult() : "{}");
+                body.add("checkerResult", session.getCheckerResult() != null ? session.getCheckerResult() : "{}");
+            }
+
             if (file != null && !file.isEmpty()) {
                 final String originalFilename = file.getOriginalFilename();
                 body.add("file", new org.springframework.core.io.ByteArrayResource(file.getBytes()) {
@@ -98,7 +107,7 @@ public class AgentTrainingController {
             }
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            var response = restTemplate.postForEntity(n8nTrainerUrl, requestEntity, String.class);
+            var response = restTemplate.postForEntity(targetWebhookUrl, requestEntity, String.class);
             log.info("n8n response: status={}, body={}", response.getStatusCode(), response.getBody());
 
             return ResponseEntity.ok(Map.of("message", "Training initiated", "status", session.getStatus()));
@@ -129,6 +138,7 @@ public class AgentTrainingController {
         else if ("compare".equals(type))
             trainingService.updateCompareResult(sessionId, result);
 
-        return ResponseEntity.ok(Map.of("status", "success", "message", "Result updated", "sessionId", sessionId, "type", type));
+        return ResponseEntity
+                .ok(Map.of("status", "success", "message", "Result updated", "sessionId", sessionId, "type", type));
     }
 }

@@ -1,0 +1,150 @@
+{
+    "name": "Agent-Trainer-Compare-Micro",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "compare-micro",
+                "options": {
+                    "rawBody": false
+                }
+            },
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2.1,
+            "position": [
+                0,
+                0
+            ],
+            "id": "webhook-compare",
+            "name": "Webhook: Receive Compare Data"
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "={{ $('Webhook: Receive Compare Data').item.json.body?.prompt }}\n\nMaker Data (Source 1):\n{{ $('Webhook: Receive Compare Data').item.json.body?.makerResult }}\n\nChecker Data (Source 2):\n{{ $('Webhook: Receive Compare Data').item.json.body?.checkerResult }}\n\nReturn the comparison results strictly in JSON format.",
+                "hasOutputParser": true,
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 2.2,
+            "position": [
+                260,
+                0
+            ],
+            "id": "ai-trainer-compare",
+            "name": "AI Trainer Compare"
+        },
+        {
+            "parameters": {
+                "modelSource": "inferenceProfile",
+                "model": "us.anthropic.claude-opus-4-20250514-v1:0",
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatAwsBedrock",
+            "typeVersion": 1.1,
+            "position": [
+                260,
+                200
+            ],
+            "id": "bedrock-compare",
+            "name": "AWS Bedrock",
+            "credentials": {
+                "aws": {
+                    "id": "InjmTeZAc8NspPEa",
+                    "name": "AWS account 10"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsonSchemaExample": "{\n  \"cusip\": \"\",\n  \"status\": \"\",\n  \"remarks\": \"\",\n  \"confidenceScore\": 0.0,\n  \"matchDetails\": { \"cusipMatch\": true, \"dateMatch\": true, \"typeMatch\": true }\n}"
+            },
+            "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+            "typeVersion": 1.3,
+            "position": [
+                460,
+                100
+            ],
+            "id": "json-formatter-compare",
+            "name": "JSON Formatter (Compare)"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $('Webhook: Receive Compare Data').item.json.body?.baseUrl }}/api/training/callback",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ { sessionId: $('Webhook: Receive Compare Data').item.json.body?.sessionId, type: $('Webhook: Receive Compare Data').item.json.body?.type, result: JSON.stringify($json.output) } }}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                720,
+                0
+            ],
+            "id": "trainer-callback-compare",
+            "name": "Trainer Callback"
+        }
+    ],
+    "connections": {
+        "Webhook: Receive Compare Data": {
+            "main": [
+                [
+                    {
+                        "node": "AI Trainer Compare",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "AI Trainer Compare": {
+            "main": [
+                [
+                    {
+                        "node": "Trainer Callback",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "AWS Bedrock": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "AI Trainer Compare",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "JSON Formatter (Compare)": {
+            "ai_outputParser": [
+                [
+                    {
+                        "node": "AI Trainer Compare",
+                        "type": "ai_outputParser",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "pinData": {}
+}
