@@ -503,7 +503,22 @@ function renderEventsTable() {
     return;
   }
 
-  const sortedEvents = performSort([...allEvents], eventSort.field, eventSort.dir);
+  let eventsToRender = allEvents;
+  if (currentSearchQuery) {
+    const q = currentSearchQuery.toLowerCase();
+    eventsToRender = allEvents.filter(ev =>
+      (ev.cusip?.toLowerCase().includes(q)) ||
+      (ev.eventId?.toLowerCase().includes(q)) ||
+      (ev.eventType?.toLowerCase().includes(q))
+    );
+  }
+
+  if (!eventsToRender.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted)">No events found</td></tr>';
+    return;
+  }
+
+  const sortedEvents = performSort([...eventsToRender], eventSort.field, eventSort.dir);
 
   tbody.innerHTML = sortedEvents.map(ev => `
     <tr>
@@ -537,17 +552,11 @@ function filterEvents(status, btn) {
   loadEvents();
 }
 
+let currentSearchQuery = '';
+
 function searchEvents(query) {
-  if (!query) { renderEventsTable(); return; }
-  const filtered = allEvents.filter(ev =>
-    (ev.cusip?.toLowerCase().includes(query.toLowerCase())) ||
-    (ev.eventId?.toLowerCase().includes(query.toLowerCase())) ||
-    (ev.eventType?.toLowerCase().includes(query.toLowerCase()))
-  );
-  const temp = allEvents;
-  allEvents = filtered;
+  currentSearchQuery = query || '';
   renderEventsTable();
-  allEvents = temp;
 }
 
 async function viewEventDetail(eventId) {
