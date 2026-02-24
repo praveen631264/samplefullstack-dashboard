@@ -230,7 +230,7 @@ function submitAgentCombinedViaForm(source1Input, source2Input, workflowId, agen
     if (source1Input.files.length > 0) {
       const f1 = document.createElement('input');
       f1.type = 'file';
-      f1.name = 'makerFile';
+      f1.name = 'source1';
       const dt1 = new DataTransfer();
       dt1.items.add(source1Input.files[0]);
       f1.files = dt1.files;
@@ -240,7 +240,7 @@ function submitAgentCombinedViaForm(source1Input, source2Input, workflowId, agen
     if (source2Input.files.length > 0) {
       const f2 = document.createElement('input');
       f2.type = 'file';
-      f2.name = 'checkerFile';
+      f2.name = 'source2';
       const dt2 = new DataTransfer();
       dt2.items.add(source2Input.files[0]);
       f2.files = dt2.files;
