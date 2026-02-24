@@ -419,16 +419,30 @@ body {
 .agent-summary-value { color: var(--text-primary); font-weight: 600; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .saved-agents-list { padding: 0; }
-.saved-agent-item { display: flex; align-items: center; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--border-light); transition: var(--transition); }
-.saved-agent-item:last-child { border-bottom: none; }
-.saved-agent-item:hover { background: var(--bg-hover); }
+.saved-agent-accordion { border-bottom: 1px solid var(--border-light); }
+.saved-agent-accordion:last-child { border-bottom: none; }
+.saved-agent-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; cursor: pointer; transition: var(--transition); }
+.saved-agent-header:hover { background: var(--bg-hover); }
+.saved-agent-left { display: flex; align-items: center; gap: 14px; }
+.saved-agent-right { display: flex; align-items: center; gap: 10px; }
 .saved-agent-icon { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .saved-agent-icon svg { width: 18px; height: 18px; color: var(--accent); }
 .saved-agent-info { flex: 1; }
 .saved-agent-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
 .saved-agent-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-.saved-agent-badges { display: flex; gap: 6px; }
-.saved-agent-badges .step-badge { font-size: 10px; }
+.accordion-chevron { width: 18px; height: 18px; color: var(--text-muted); transition: transform 0.2s ease; }
+.saved-agent-accordion.open .accordion-chevron { transform: rotate(180deg); }
+.saved-agent-body { display: none; padding: 0 20px 16px 70px; }
+.saved-agent-accordion.open .saved-agent-body { display: block; }
+.agent-prompt-section { margin-bottom: 12px; }
+.agent-prompt-section:last-child { margin-bottom: 0; }
+.agent-prompt-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.prompt-label-icon { width: 14px; height: 14px; }
+.agent-prompt-content { font-size: 12px; color: var(--text-primary); background: var(--bg-main); border: 1px solid var(--border-light); border-radius: 6px; padding: 10px 14px; margin: 0; white-space: pre-wrap; word-break: break-word; font-family: 'SF Mono', 'Fira Code', monospace; max-height: 150px; overflow-y: auto; line-height: 1.5; }
+.btn-delete-agent { background: none; border: none; cursor: pointer; padding: 6px; border-radius: 6px; transition: var(--transition); display: flex; align-items: center; justify-content: center; }
+.btn-delete-agent svg { width: 16px; height: 16px; color: var(--text-muted); }
+.btn-delete-agent:hover { background: #fee2e2; }
+.btn-delete-agent:hover svg { color: #dc2626; }
 
 .bpmn-container { padding: 20px; }
 .bpmn-toolbar {

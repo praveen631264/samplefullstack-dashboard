@@ -947,22 +947,59 @@ async function loadSavedAgents() {
 
     section.style.display = 'block';
     list.innerHTML = agents.map(a => `
-      <div class="saved-agent-item" data-testid="agent-item-${a.id}">
-        <div class="saved-agent-icon"><i data-lucide="bot"></i></div>
-        <div class="saved-agent-info">
-          <div class="saved-agent-name">${a.agentName}</div>
-          <div class="saved-agent-meta">Created ${formatDetailedTime(a.createdAt)}</div>
+      <div class="saved-agent-accordion" data-testid="agent-item-${a.id}">
+        <div class="saved-agent-header" onclick="toggleAgentAccordion(this)">
+          <div class="saved-agent-left">
+            <div class="saved-agent-icon"><i data-lucide="bot"></i></div>
+            <div class="saved-agent-info">
+              <div class="saved-agent-name">${a.agentName}</div>
+              <div class="saved-agent-meta">Created ${formatDetailedTime(a.createdAt)}</div>
+            </div>
+          </div>
+          <div class="saved-agent-right">
+            <button class="btn-delete-agent" onclick="event.stopPropagation(); deleteAgent(${a.id}, '${a.agentName}')" data-testid="button-delete-agent-${a.id}" title="Delete Agent">
+              <i data-lucide="trash-2"></i>
+            </button>
+            <i data-lucide="chevron-down" class="accordion-chevron"></i>
+          </div>
         </div>
-        <div class="saved-agent-badges">
-          <span class="step-badge">Maker</span>
-          <span class="step-badge">Checker</span>
-          <span class="step-badge">Compare</span>
+        <div class="saved-agent-body">
+          <div class="agent-prompt-section">
+            <div class="agent-prompt-label"><i data-lucide="file-text" class="prompt-label-icon"></i> Maker Prompt</div>
+            <pre class="agent-prompt-content">${a.makerPrompt || '(empty)'}</pre>
+          </div>
+          <div class="agent-prompt-section">
+            <div class="agent-prompt-label"><i data-lucide="file-check" class="prompt-label-icon"></i> Checker Prompt</div>
+            <pre class="agent-prompt-content">${a.checkerPrompt || '(empty)'}</pre>
+          </div>
+          <div class="agent-prompt-section">
+            <div class="agent-prompt-label"><i data-lucide="git-compare" class="prompt-label-icon"></i> Compare Prompt</div>
+            <pre class="agent-prompt-content">${a.comparePrompt || '(empty)'}</pre>
+          </div>
         </div>
       </div>
     `).join('');
     lucide.createIcons();
   } catch (err) {
     console.error('Load agents error:', err);
+  }
+}
+
+function toggleAgentAccordion(header) {
+  const accordion = header.parentElement;
+  accordion.classList.toggle('open');
+}
+
+async function deleteAgent(id, name) {
+  if (!confirm(`Delete agent "${name}"? This cannot be undone.`)) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/agents/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Delete failed');
+    showToast(`Agent "${name}" deleted`, 'success');
+    loadSavedAgents();
+  } catch (err) {
+    console.error('Delete agent error:', err);
+    showToast('Failed to delete agent', 'error');
   }
 }
 
