@@ -367,8 +367,14 @@ body {
 .train-step-arrow svg { width: 14px; height: 14px; }
 
 .train-section { transition: var(--transition); }
-.train-section.locked { opacity: 0.5; pointer-events: none; }
-.train-section.locked .train-section-body { display: none; }
+.train-section.locked { opacity: 0.6; }
+.train-section.locked .train-section-body { pointer-events: none; }
+.train-section.locked .btn-check-results,
+.train-section.locked .btn-finalize,
+.train-section.locked .btn-submit,
+.train-section.locked textarea,
+.train-section.locked input,
+.train-section.locked .file-input-wrap { opacity: 0.5; cursor: not-allowed; }
 .train-section.finalized { border-left: 3px solid var(--success); }
 .train-section-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
 
