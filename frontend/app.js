@@ -655,25 +655,32 @@ function formatJSON(data) {
   } catch { return data; }
 }
 
+function generateSessionId() {
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `TRN-${dd}${mm}${yyyy}-${rand}`;
+}
+
 let trainState = { 
-  sessionId: '',
+  sessionId: generateSessionId(),
   step: 1, 
   makerFinalized: false, 
   checkerFinalized: false, 
   compareFinalized: false 
 };
 
+(function initTrainSession() {
+  const el = document.getElementById('train-session-id');
+  if (el) el.value = trainState.sessionId;
+})();
+
 async function checkTrainResults(type) {
-  const sessionIdInput = document.getElementById('train-session-id');
-  const sessionId = sessionIdInput.value.trim();
+  const sessionId = trainState.sessionId;
   const promptEl = document.getElementById(`train-${type}-prompt`);
   const prompt = promptEl ? promptEl.value.trim() : '';
-
-  if (!sessionId) {
-    showToast('Please enter a Unique ID first', 'warning');
-    return;
-  }
-  trainState.sessionId = sessionId;
 
   if (!prompt) {
     showToast('Please enter a prompt first', 'warning');

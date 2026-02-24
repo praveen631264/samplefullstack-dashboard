@@ -149,15 +149,7 @@
             <div class="train-step-arrow"><i data-lucide="chevron-right"></i></div>
             <div class="train-step" id="step-indicator-4"><span class="step-num">4</span> Save Agent</div>
           </div>
-          <div class="train-global-config">
-            <div class="form-group" style="margin: 20px 0 0 0; padding-top: 15px; border-top: 1px solid var(--border-color);">
-              <label><i data-lucide="fingerprint" class="label-icon"></i> Training Session ID (Unique ID)</label>
-              <div class="session-id-input-wrap">
-                <input type="text" id="train-session-id" class="input-field" placeholder="Enter a unique ID for this training session..." data-testid="input-train-session-id">
-                <p class="field-help">Use this ID to track your training results across steps.</p>
-              </div>
-            </div>
-          </div>
+          <input type="hidden" id="train-session-id" value="">
         </div>
 
         <div class="train-section card" id="train-step-1">
