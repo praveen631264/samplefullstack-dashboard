@@ -590,7 +590,13 @@ function viewWorkflowEvent(eventId, workflowId) {
 
 function navigateToEvent(eventId) {
   switchView('events');
-  setTimeout(() => viewEventDetail(eventId), 300);
+  setTimeout(() => {
+    const searchInput = document.getElementById('event-search');
+    if (searchInput) {
+      searchInput.value = eventId;
+      searchEvents(eventId);
+    }
+  }, 300);
 }
 
 function closeModal() {
