@@ -27,11 +27,17 @@ public class WorkflowService {
     }
 
     public WorkflowExecution createWorkflow(String description, String s1Name, String s2Name) {
+        return createWorkflow(description, s1Name, s2Name, null, null);
+    }
+
+    public WorkflowExecution createWorkflow(String description, String s1Name, String s2Name, byte[] s1Data, byte[] s2Data) {
         WorkflowExecution wf = new WorkflowExecution();
         wf.setWorkflowId(generateWorkflowId());
         wf.setDescription(description);
         wf.setSource1FileName(s1Name);
         wf.setSource2FileName(s2Name);
+        wf.setSource1FileData(s1Data);
+        wf.setSource2FileData(s2Data);
         wf.setStatus("STARTED");
         wf.setCreatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
         wf.setUpdatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
@@ -39,6 +45,10 @@ public class WorkflowService {
         WorkflowExecution saved = workflowRepository.save(wf);
         logAudit(saved.getWorkflowId(), "WORKFLOW_CREATED", "Started workflow for: " + description);
         return saved;
+    }
+
+    public Optional<WorkflowExecution> getWorkflow(String workflowId) {
+        return workflowRepository.findById(workflowId);
     }
 
     public Optional<WorkflowExecution> updateStatus(String workflowId, String status) {

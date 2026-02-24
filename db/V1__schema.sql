@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS workflow_executions (
     status            VARCHAR(255),
     source1_file_name VARCHAR(255),
     source2_file_name VARCHAR(255),
+    source1_file_data BLOB,
+    source2_file_data BLOB,
     event_id          VARCHAR(255),
     cusip             VARCHAR(255),
     event_type        VARCHAR(255),

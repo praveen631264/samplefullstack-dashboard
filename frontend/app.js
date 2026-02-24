@@ -564,27 +564,55 @@ async function viewEventDetail(eventId) {
     const res = await fetch(`${API_BASE}/api/events/${eventId}`);
     const ev = await res.json();
 
+    let wf = null;
+    if (ev.workflowId) {
+      try {
+        const wfList = await fetch(`${API_BASE}/api/workflows`).then(r => r.json());
+        wf = wfList.find(w => w.workflowId === ev.workflowId);
+      } catch (e) {}
+    }
+
+    const fileLinksHtml = wf ? `
+      <div class="modal-section">
+        <div class="modal-section-title"><i data-lucide="paperclip" class="section-title-icon"></i> Uploaded Documents</div>
+        <div class="modal-file-links">
+          ${wf.source1FileName && wf.source1FileName !== 'N/A' ? `<a href="${API_BASE}/api/workflows/${wf.workflowId}/file/source1" class="modal-file-link" download data-testid="link-download-source1-${wf.workflowId}"><i data-lucide="file-spreadsheet"></i><div class="modal-file-info"><span class="modal-file-name">${wf.source1FileName}</span><span class="modal-file-type">Source 1 (Maker)</span></div><i data-lucide="download" class="modal-file-download"></i></a>` : ''}
+          ${wf.source2FileName && wf.source2FileName !== 'N/A' ? `<a href="${API_BASE}/api/workflows/${wf.workflowId}/file/source2" class="modal-file-link" download data-testid="link-download-source2-${wf.workflowId}"><i data-lucide="file-text"></i><div class="modal-file-info"><span class="modal-file-name">${wf.source2FileName}</span><span class="modal-file-type">Source 2 (Checker)</span></div><i data-lucide="download" class="modal-file-download"></i></a>` : ''}
+        </div>
+      </div>
+    ` : '';
+
     document.getElementById('modal-title').textContent = `Event: ${ev.eventId}`;
     document.getElementById('modal-body').innerHTML = `
-      <div class="detail-grid">
-        <div class="detail-item"><div class="detail-label">Event ID</div><div class="detail-value">${ev.eventId}</div></div>
-        <div class="detail-item"><div class="detail-label">CUSIP</div><div class="detail-value">${ev.cusip}</div></div>
-        <div class="detail-item"><div class="detail-label">Event Type</div><div class="detail-value"><span class="type-badge type-${getTypeClass(ev.eventType)}">${ev.eventType}</span></div></div>
-        <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value"><span class="status-badge status-${ev.status?.replace(/\s/g, '-')}">${ev.status}</span></div></div>
-        <div class="detail-item"><div class="detail-label">Principal Rate</div><div class="detail-value">${ev.principalRate?.toFixed(2) || '-'}</div></div>
-        <div class="detail-item"><div class="detail-label">Premium Rate</div><div class="detail-value">${ev.premiumRate?.toFixed(2) || '-'}</div></div>
-        <div class="detail-item"><div class="detail-label">Security Called Amount</div><div class="detail-value">${ev.securityCalledAmount?.toLocaleString() || '-'}</div></div>
-        <div class="detail-item"><div class="detail-label">Payable Date</div><div class="detail-value">${ev.payableDate || '-'}</div></div>
-        <div class="detail-item full-width"><div class="detail-label">Remarks</div><div class="detail-value">${ev.remarks || 'None'}</div></div>
+      <div class="modal-section">
+        <div class="modal-section-title"><i data-lucide="info" class="section-title-icon"></i> Event Details</div>
+        <div class="detail-grid">
+          <div class="detail-item"><div class="detail-label">Event ID</div><div class="detail-value">${ev.eventId}</div></div>
+          <div class="detail-item"><div class="detail-label">CUSIP</div><div class="detail-value"><strong>${ev.cusip}</strong></div></div>
+          <div class="detail-item"><div class="detail-label">Event Type</div><div class="detail-value"><span class="type-badge type-${getTypeClass(ev.eventType)}">${ev.eventType}</span></div></div>
+          <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value"><span class="status-badge status-${ev.status?.replace(/\s/g, '-')}">${ev.status}</span></div></div>
+          <div class="detail-item"><div class="detail-label">Principal Rate</div><div class="detail-value">${ev.principalRate?.toFixed(2) || '-'}</div></div>
+          <div class="detail-item"><div class="detail-label">Premium Rate</div><div class="detail-value">${ev.premiumRate?.toFixed(2) || '-'}</div></div>
+          <div class="detail-item"><div class="detail-label">Called Amount</div><div class="detail-value">${ev.securityCalledAmount?.toLocaleString() || '-'}</div></div>
+          <div class="detail-item"><div class="detail-label">Payable Date</div><div class="detail-value">${ev.payableDate || '-'}</div></div>
+          ${ev.workflowId ? `<div class="detail-item"><div class="detail-label">Workflow ID</div><div class="detail-value"><code>${ev.workflowId}</code></div></div>` : ''}
+          <div class="detail-item"><div class="detail-label">Created</div><div class="detail-value">${formatDetailedTime(ev.createdAt)}</div></div>
+        </div>
+        ${ev.remarks ? `<div class="modal-remarks"><div class="detail-label">Remarks</div><div class="modal-remarks-text">${ev.remarks}</div></div>` : ''}
       </div>
+      ${fileLinksHtml}
       ${ev.source1Data || ev.source2Data ? `
-        <div class="source-comparison">
-          <div class="source-box"><h4>Source 1 (Maker)</h4><pre>${formatJSON(ev.source1Data)}</pre></div>
-          <div class="source-box"><h4>Source 2 (Checker)</h4><pre>${formatJSON(ev.source2Data)}</pre></div>
+        <div class="modal-section">
+          <div class="modal-section-title"><i data-lucide="git-compare" class="section-title-icon"></i> AI Extraction Results</div>
+          <div class="source-comparison">
+            <div class="source-box"><h4><i data-lucide="file-spreadsheet" class="source-icon"></i> Source 1 (Maker)</h4><pre>${formatJSON(ev.source1Data)}</pre></div>
+            <div class="source-box"><h4><i data-lucide="file-text" class="source-icon"></i> Source 2 (Checker)</h4><pre>${formatJSON(ev.source2Data)}</pre></div>
+          </div>
         </div>
       ` : ''}
     `;
     document.getElementById('event-modal').classList.add('active');
+    lucide.createIcons();
   } catch (err) {
     showToast('Error loading event details', 'error');
   }

@@ -1,5 +1,6 @@
 package com.data.pipeline.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,6 +21,17 @@ public class WorkflowExecution {
     private String status;
     private String source1FileName;
     private String source2FileName;
+
+    @Lob
+    @JsonIgnore
+    @Column(name = "source1_file_data")
+    private byte[] source1FileData;
+
+    @Lob
+    @JsonIgnore
+    @Column(name = "source2_file_data")
+    private byte[] source2FileData;
+
     private String eventId;
     private String cusip;
     private String eventType;
