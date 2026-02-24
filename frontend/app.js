@@ -785,7 +785,9 @@ let trainState = {
   step: 1,
   makerFinalized: false,
   checkerFinalized: false,
-  compareFinalized: false
+  compareFinalized: false,
+  makerFile: null,
+  checkerFile: null
 };
 
 (function initTrainSession() {
@@ -808,10 +810,12 @@ async function checkTrainResults(type) {
     const fileInput = document.getElementById('train-maker-file');
     if (!fileInput.files.length) { showToast('Please upload a Maker file', 'warning'); return; }
     file = fileInput.files[0];
+    trainState.makerFile = file;
   } else if (type === 'checker') {
     const fileInput = document.getElementById('train-checker-file');
     if (!fileInput.files.length) { showToast('Please upload a Checker file', 'warning'); return; }
     file = fileInput.files[0];
+    trainState.checkerFile = file;
   }
 
   const resultsPanel = document.getElementById(`results-${type}`);
@@ -1006,10 +1010,8 @@ async function saveAgent() {
   formData.append('checkerPrompt', document.getElementById('train-checker-prompt').value.trim());
   formData.append('comparePrompt', document.getElementById('train-compare-prompt').value.trim());
 
-  const makerFileInput = document.getElementById('train-maker-file');
-  const checkerFileInput = document.getElementById('train-checker-file');
-  if (makerFileInput.files.length > 0) formData.append('makerFile', makerFileInput.files[0]);
-  if (checkerFileInput.files.length > 0) formData.append('checkerFile', checkerFileInput.files[0]);
+  if (trainState.makerFile) formData.append('makerFile', trainState.makerFile);
+  if (trainState.checkerFile) formData.append('checkerFile', trainState.checkerFile);
 
   try {
     const res = await fetch(`${API_BASE}/api/agents`, {
@@ -1031,7 +1033,7 @@ async function saveAgent() {
 }
 
 function resetTrainForm() {
-  trainState = { step: 1, makerFinalized: false, checkerFinalized: false, compareFinalized: false };
+  trainState = { step: 1, makerFinalized: false, checkerFinalized: false, compareFinalized: false, makerFile: null, checkerFile: null };
 
   ['train-maker-prompt', 'train-checker-prompt', 'train-compare-prompt'].forEach(id => {
     const el = document.getElementById(id);
