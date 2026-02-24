@@ -1,0 +1,65 @@
+------WebKitFormBoundaryFalaM7B0Wz6CKwdI
+Content-Disposition: form-data; name="source1"; filename="NOTICE_OF_REDEMPTION (1) (2).xlsx"
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+
+------WebKitFormBoundaryFalaM7B0Wz6CKwdI
+Content-Disposition: form-data; name="source2"; filename="NOTICE_OF_REDEMPTION (1) (4).pdf"
+Content-Type: application/pdf
+
+
+------WebKitFormBoundaryFalaM7B0Wz6CKwdI
+Content-Disposition: form-data; name="workflowId"
+
+EVT-24022026-012
+------WebKitFormBoundaryFalaM7B0Wz6CKwdI
+Content-Disposition: form-data; name="makerPrompt"
+
+You are a financial document parser specializing in DTCC corporate action events.
+
+Generate ONLY valid JSON with these fields:
+- cusip (the CUSIP identifier)
+- eventType: Determine the event type using these rules:
+  * If Call Type = 'F' or text mentions 'all outstanding' → 'Full Call'
+  * If Call Type = 'P' or text mentions 'partial' or 'random lot' → 'Partial Call'
+  * If text mentions 'maturity' or 'redeemed at par' or 'final paydown' → 'Redemption'
+  * If text mentions 'merger' 'exchange offer' 'tender' 'conversion' → 'Reorg'
+- principalRate (default 1000 if not found)
+- premiumRate (if applicable)
+- securityCalledAmount:
+  * For Partial Call: use 'random lot amount paid(partial)' value
+  * For Full Call: use total outstanding amount
+  * For Redemption: use maturity/paydown amount
+- securityDescription (description of the security)
+- payableDate: from redemption date (convert Excel serial numbers to YYYY-MM-DD, e.g. 45944 → 2025-10-14)
+- publicationDate: from publication date (same date conversion)
+- recordDate: 5 business days before payableDate
+- status: always "Created"
+- confidenceScore: your confidence in the extraction accuracy (0.0 to 1.0)
+
+Remove any line breaks and special characters. Return ONLY clean JSON.
+------WebKitFormBoundaryFalaM7B0Wz6CKwdI
+Content-Disposition: form-data; name="checkerPrompt"
+
+You are a financial document parser specializing in DTCC corporate action events.
+Extract the following fields from this PDF document:
+
+- cusip: from CUSIP number field
+- payableDate: from 'redeemed on' or 'redemption date' field (YYYY-MM-DD format)
+- publicationDate: from 'Dated:' field (YYYY-MM-DD format)
+- eventType: Determine type:
+  * If document says 'all outstanding' or 'full redemption' → 'Full Call'
+  * If document mentions 'partial' or specific amount less than total → 'Partial Call'
+  * If document mentions 'maturity' → 'Redemption'
+  * If document mentions 'merger' 'exchange' 'tender' → 'Reorg'
+- securityCalledAmount: from 'Amount called' or 'principal amount'
+- securityDescription: description of the security
+- confidenceScore: your confidence (0.0 to 1.0)
+
+Return ONLY clean JSON.
+------WebKitFormBoundaryFalaM7B0Wz6CKwdI
+Content-Disposition: form-data; name="comparePrompt"
+
+Compare these two sources Maker Data and Checker Data for the same corporate action event:
+
+1. Compare CUSIP - must mShow more
