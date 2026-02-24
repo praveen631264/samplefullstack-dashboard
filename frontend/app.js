@@ -68,7 +68,7 @@ async function loadAgentDropdown() {
     const select = document.getElementById('agent-select');
     if (!select) return;
     const currentVal = select.value;
-    select.innerHTML = '<option value="">Default (No Agent)</option>';
+    select.innerHTML = '<option value="">Default</option>';
     cachedAgents.forEach(a => {
       const opt = document.createElement('option');
       opt.value = a.id;
