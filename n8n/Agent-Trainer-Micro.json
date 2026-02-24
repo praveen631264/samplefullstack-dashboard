@@ -176,7 +176,7 @@
                 },
                 "sendBody": true,
                 "specifyBody": "json",
-                "jsonBody": "={ \"sessionId\": \"{{ $('Webhook: Receive Training Data').item.json.body?.sessionId }}\", \"type\": \"{{ $('Webhook: Receive Training Data').item.json.body?.type }}\", \"result\": \"{{ JSON.stringify($json.output) }}\" }",
+                "jsonBody": "={{ { sessionId: $('Webhook: Receive Training Data').item.json.body?.sessionId, type: $('Webhook: Receive Training Data').item.json.body?.type, result: JSON.stringify($json.output) } }}",
                 "options": {}
             },
             "type": "n8n-nodes-base.httpRequest",
