@@ -232,7 +232,7 @@
         {
             "parameters": {
                 "promptType": "define",
-                "text": "={{ $('Receive Combined Inputs').item.json.body?.comparePrompt }}\n\nMaker Data:\n{{ JSON.stringify($('Create Event API').item.json) }}\n\nChecker Data:\n{{ JSON.stringify($('AI Extract Source 2 JSON').item.json.output) }}",
+                "text": "={{ $('Receive Combined Inputs').item.json.body?.comparePrompt }}\n\nMaker Data:\n{{ JSON.stringify($('Create Event API').item.json) }}\n\nChecker Data:\n{{ JSON.stringify($('AI Extract Source 2 JSON').item.json) }}",
                 "hasOutputParser": true,
                 "options": {}
             },
