@@ -964,17 +964,32 @@ async function loadSavedAgents() {
           </div>
         </div>
         <div class="saved-agent-body">
-          <div class="agent-prompt-section">
-            <div class="agent-prompt-label"><i data-lucide="file-text" class="prompt-label-icon"></i> Maker Prompt</div>
-            <pre class="agent-prompt-content">${a.makerPrompt || '(empty)'}</pre>
+          <div class="prompt-accordion">
+            <div class="prompt-accordion-header" onclick="this.parentElement.classList.toggle('open')">
+              <div class="prompt-accordion-title"><i data-lucide="file-text" class="prompt-label-icon"></i> Maker Prompt</div>
+              <i data-lucide="chevron-down" class="prompt-accordion-chevron"></i>
+            </div>
+            <div class="prompt-accordion-body">
+              <pre class="agent-prompt-content">${a.makerPrompt || '(empty)'}</pre>
+            </div>
           </div>
-          <div class="agent-prompt-section">
-            <div class="agent-prompt-label"><i data-lucide="file-check" class="prompt-label-icon"></i> Checker Prompt</div>
-            <pre class="agent-prompt-content">${a.checkerPrompt || '(empty)'}</pre>
+          <div class="prompt-accordion">
+            <div class="prompt-accordion-header" onclick="this.parentElement.classList.toggle('open')">
+              <div class="prompt-accordion-title"><i data-lucide="file-check" class="prompt-label-icon"></i> Checker Prompt</div>
+              <i data-lucide="chevron-down" class="prompt-accordion-chevron"></i>
+            </div>
+            <div class="prompt-accordion-body">
+              <pre class="agent-prompt-content">${a.checkerPrompt || '(empty)'}</pre>
+            </div>
           </div>
-          <div class="agent-prompt-section">
-            <div class="agent-prompt-label"><i data-lucide="git-compare" class="prompt-label-icon"></i> Compare Prompt</div>
-            <pre class="agent-prompt-content">${a.comparePrompt || '(empty)'}</pre>
+          <div class="prompt-accordion">
+            <div class="prompt-accordion-header" onclick="this.parentElement.classList.toggle('open')">
+              <div class="prompt-accordion-title"><i data-lucide="git-compare" class="prompt-label-icon"></i> Compare Prompt</div>
+              <i data-lucide="chevron-down" class="prompt-accordion-chevron"></i>
+            </div>
+            <div class="prompt-accordion-body">
+              <pre class="agent-prompt-content">${a.comparePrompt || '(empty)'}</pre>
+            </div>
           </div>
         </div>
       </div>

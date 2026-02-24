@@ -434,11 +434,17 @@ body {
 .saved-agent-accordion.open .accordion-chevron { transform: rotate(180deg); }
 .saved-agent-body { display: none; padding: 0 20px 16px 70px; }
 .saved-agent-accordion.open .saved-agent-body { display: block; }
-.agent-prompt-section { margin-bottom: 12px; }
-.agent-prompt-section:last-child { margin-bottom: 0; }
-.agent-prompt-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
-.prompt-label-icon { width: 14px; height: 14px; }
-.agent-prompt-content { font-size: 12px; color: var(--text-primary); background: var(--bg-main); border: 1px solid var(--border-light); border-radius: 6px; padding: 10px 14px; margin: 0; white-space: pre-wrap; word-break: break-word; font-family: 'SF Mono', 'Fira Code', monospace; max-height: 150px; overflow-y: auto; line-height: 1.5; }
+.prompt-accordion { border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+.prompt-accordion:last-child { margin-bottom: 0; }
+.prompt-accordion-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; background: var(--bg-main); transition: var(--transition); }
+.prompt-accordion-header:hover { background: var(--bg-hover); }
+.prompt-accordion-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+.prompt-label-icon { width: 15px; height: 15px; color: var(--accent); }
+.prompt-accordion-chevron { width: 16px; height: 16px; color: var(--text-muted); transition: transform 0.2s ease; flex-shrink: 0; }
+.prompt-accordion.open .prompt-accordion-chevron { transform: rotate(180deg); }
+.prompt-accordion-body { display: none; padding: 0; }
+.prompt-accordion.open .prompt-accordion-body { display: block; }
+.agent-prompt-content { font-size: 12.5px; color: var(--text-primary); background: #fafbfc; border-top: 1px solid var(--border-light); border-radius: 0; padding: 14px 16px; margin: 0; white-space: pre-wrap; word-break: break-word; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; max-height: 250px; overflow-y: auto; line-height: 1.6; }
 .btn-delete-agent { background: none; border: none; cursor: pointer; padding: 6px; border-radius: 6px; transition: var(--transition); display: flex; align-items: center; justify-content: center; }
 .btn-delete-agent svg { width: 16px; height: 16px; color: var(--text-muted); }
 .btn-delete-agent:hover { background: #fee2e2; }
