@@ -807,9 +807,18 @@ async function checkTrainResults(type) {
   lucide.createIcons();
 
   try {
-    await fetch(`${API_BASE}/api/training/session/${sessionId}`);
+    const sessionRes = await fetch(`${API_BASE}/api/training/session/${sessionId}`);
+    const session = await sessionRes.json();
 
-    await submitTrainerViaBrowserForm(sessionId, type, prompt, file);
+    let extraFields = {};
+    if (type === 'compare') {
+      extraFields.makerResult = session.makerResult || '';
+      extraFields.checkerResult = session.checkerResult || '';
+      extraFields.makerPrompt = session.makerPrompt || document.getElementById('train-maker-prompt')?.value || '';
+      extraFields.checkerPrompt = session.checkerPrompt || document.getElementById('train-checker-prompt')?.value || '';
+    }
+
+    await submitTrainerViaBrowserForm(sessionId, type, prompt, file, extraFields);
 
     showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} check initiated. Waiting for AI...`, 'info');
 
@@ -822,7 +831,7 @@ async function checkTrainResults(type) {
   }
 }
 
-function submitTrainerViaBrowserForm(sessionId, type, prompt, file) {
+function submitTrainerViaBrowserForm(sessionId, type, prompt, file, extraFields) {
   return new Promise((resolve) => {
     const iframeName = 'trainer_frame_' + Date.now();
     const iframe = document.createElement('iframe');
@@ -861,6 +870,12 @@ function submitTrainerViaBrowserForm(sessionId, type, prompt, file) {
     addHidden('prompt', prompt);
     addHidden('baseUrl', CALLBACK_BASE_URL);
     addHidden('callbackUrl', `${CALLBACK_BASE_URL}/api/training/callback`);
+
+    if (extraFields) {
+      Object.entries(extraFields).forEach(([key, val]) => {
+        if (val) addHidden(key, val);
+      });
+    }
 
     document.body.appendChild(form);
 
@@ -921,7 +936,16 @@ function finalizeStep(step) {
   section.classList.add('finalized');
 
   const prompt = document.getElementById(`train-${name}-prompt`);
-  if (prompt) prompt.disabled = true;
+  if (prompt) {
+    prompt.disabled = true;
+    const sessionId = trainState.sessionId;
+    const promptValue = prompt.value.trim();
+    fetch(`${API_BASE}/api/training/session/${sessionId}/prompt`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: name, prompt: promptValue })
+    }).catch(err => console.error('Save prompt error:', err));
+  }
 
   const indicator = document.getElementById(`step-indicator-${step}`);
   indicator.classList.remove('active');
