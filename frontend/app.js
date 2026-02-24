@@ -25,6 +25,15 @@ function switchView(view) {
   lucide.createIcons();
 }
 
+function switchTrainSubTab(tab) {
+  document.querySelectorAll('.train-sub-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.train-subtab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.train-sub-tab[data-subtab="${tab}"]`).classList.add('active');
+  document.getElementById(`subtab-${tab}`).classList.add('active');
+  if (tab === 'available') loadSavedAgents();
+  lucide.createIcons();
+}
+
 function handleFileSelect(input, nameId) {
   const nameEl = document.getElementById(nameId);
   const zone = input.closest('.file-input-wrap');
@@ -996,8 +1005,8 @@ async function saveAgent() {
       return;
     }
     showToast(`Agent "${agentName}" saved successfully`, 'success');
-    loadSavedAgents();
     resetTrainForm();
+    switchTrainSubTab('available');
   } catch (err) {
     console.error('Save agent error:', err);
     showToast('Error saving agent', 'error');
@@ -1056,11 +1065,10 @@ async function loadSavedAgents() {
     const list = document.getElementById('saved-agents-list');
 
     if (agents.length === 0) {
-      section.style.display = 'none';
+      list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted)">No AI agents created yet. Go to the <strong>Create AI Agents</strong> tab to build one.</div>';
+      lucide.createIcons();
       return;
     }
-
-    section.style.display = 'block';
     list.innerHTML = agents.map(a => `
       <div class="saved-agent-accordion" data-testid="agent-item-${a.id}">
         <div class="saved-agent-header" onclick="toggleAgentAccordion(this)">
