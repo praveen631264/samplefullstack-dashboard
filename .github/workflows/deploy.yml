@@ -40,26 +40,25 @@ jobs:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
+        command_timeout: 15m
         script: |
           cd /home/ubuntu/app
           
-          # Install missing dependencies for diagnostics
-          sudo apt-get update -y
-          sudo apt-get install -y unzip psmisc
-
           # Rename JAR for consistency
           mv target/*.jar ./app.jar
-          
-          # Diagnostics: Inspect JAR content
-          ls -lh app.jar
-          unzip -l app.jar | grep AgentController || echo "AgentController NOT in JAR"
           
           # Clean up temporary upload structure
           rm -rf target
           
           # Eradicate zombie processes on port 5000 and port 80
+          # Use lsof/kill as fallback if fuser is missing
           sudo fuser -k 5000/tcp 2>/dev/null || true
           sudo fuser -k 80/tcp 2>/dev/null || true
+          
+          # Fallback kill logic
+          sudo kill -9 $(sudo lsof -t -i:5000) 2>/dev/null || true
+          sudo kill -9 $(sudo lsof -t -i:80) 2>/dev/null || true
+          
           sudo systemctl stop apache2 2>/dev/null || true
           sudo systemctl disable apache2 2>/dev/null || true
 
@@ -80,10 +79,13 @@ jobs:
 
           # Diagnostics: Monitoring Startup
           # Note: Build #28 took 156s to boot. We'll wait and then check logs.
-          sleep 60
+          echo "Waiting for application to start..."
+          sleep 45
           sudo pm2 status
+          # We don't use -no-daemon here to avoid blocking GitHub Actions
           sudo pm2 logs test-orchestrator --lines 100 --no-daemon &
-          sleep 30
-          sudo pkill -f "pm2 logs" || true
+          LOG_PID=$!
+          sleep 60
+          sudo kill $LOG_PID || true
           
           sudo pm2 save
