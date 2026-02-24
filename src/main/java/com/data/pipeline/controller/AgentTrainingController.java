@@ -110,14 +110,17 @@ public class AgentTrainingController {
     }
 
     @PostMapping("/callback")
-    public ResponseEntity<String> n8nCallback(@RequestBody Map<String, String> payload) {
+    public ResponseEntity<Map<String, String>> n8nCallback(@RequestBody Map<String, String> payload) {
         String sessionId = payload.get("sessionId");
         String type = payload.get("type");
         String result = payload.get("result");
 
         if (sessionId == null || type == null) {
-            return ResponseEntity.badRequest().body("Missing sessionId or type");
+            log.warn("Training callback missing required fields: sessionId={}, type={}", sessionId, type);
+            return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "Missing sessionId or type"));
         }
+
+        log.info("Training callback received: sessionId={}, type={}", sessionId, type);
 
         if ("maker".equals(type))
             trainingService.updateMakerResult(sessionId, result);
@@ -126,6 +129,6 @@ public class AgentTrainingController {
         else if ("compare".equals(type))
             trainingService.updateCompareResult(sessionId, result);
 
-        return ResponseEntity.ok("Result updated");
+        return ResponseEntity.ok(Map.of("status", "success", "message", "Result updated", "sessionId", sessionId, "type", type));
     }
 }
