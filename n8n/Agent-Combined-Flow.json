@@ -48,7 +48,7 @@
         {
             "parameters": {
                 "operation": "xlsx",
-                "binaryPropertyName": "source1",
+                "binaryPropertyName": "makerFile",
                 "options": {}
             },
             "type": "n8n-nodes-base.extractFromFile",
@@ -63,7 +63,7 @@
         {
             "parameters": {
                 "operation": "pdf",
-                "binaryPropertyName": "source2",
+                "binaryPropertyName": "checkerFile",
                 "options": {}
             },
             "type": "n8n-nodes-base.extractFromFile",
