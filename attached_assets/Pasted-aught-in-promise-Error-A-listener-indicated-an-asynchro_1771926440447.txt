@@ -1,0 +1,56 @@
+aught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was receivedUnderstand this error
+Navigated to https://04cfe9de-8100-4d20-8638-590cf8661569-00-3tlbjzde56fkw.spock.replit.dev/
+app.js:514 Fetch finished loading: GET "https://04cfe9de-8100-4d20-8638-590cf8661569-00-3tlbjzde56fkw.spock.replit.dev/api/bpmn/ca-event-processing".
+renderBPMN @ app.js:514
+(anonymous) @ app.js:53
+favicon.ico:1  GET https://04cfe9de-8100-4d20-8638-590cf8661569-00-3tlbjzde56fkw.spock.replit.dev/favicon.ico 404 (Not Found)Understand this error
+app.js:279 Fetch finished loading: GET "https://04cfe9de-8100-4d20-8638-590cf8661569-00-3tlbjzde56fkw.spock.replit.dev/api/workflows".
+refreshWorkflows @ app.js:279
+(anonymous) @ app.js:597
+setInterval
+startPolling @ app.js:595
+(anonymous) @ app.js:52
+app.js:284 Refresh error: TypeError: Cannot set properties of null (setting 'innerHTML')
+    at renderWorkflowList (app.js:357:18)
+    at refreshWorkflows (app.js:281:5)
+refreshWorkflows @ app.js:284
+await in refreshWorkflows
+(anonymous) @ app.js:597
+setInterval
+startPolling @ app.js:595
+(anonymous) @ app.js:52Understand this error
+app.js:279 Fetch finished loading: GET "https://04cfe9de-8100-4d20-8638-590cf8661569-00-3tlbjzde56fkw.spock.replit.dev/api/workflows".
+refreshWorkflows @ app.js:279
+(anonymous) @ app.js:597
+setInterval
+startPolling @ app.js:595
+(anonymous) @ app.js:52
+app.js:284 Refresh error: TypeError: Cannot set properties of null (setting 'innerHTML')
+    at renderWorkflowList (app.js:357:18)
+    at refreshWorkflows (app.js:281:5)
+refreshWorkflows @ app.js:284
+await in refreshWorkflows
+(anonymous) @ app.js:597
+setInterval
+startPolling @ app.js:595
+(anonymous) @ app.js:52Understand this error
+app.js:279 Fetch finished loading: GET "https://04cfe9de-8100-4d20-8638-590cf8661569-00-3tlbjzde56fkw.spock.replit.dev/api/workflows".
+refreshWorkflows @ app.js:279
+(anonymous) @ app.js:597
+setInterval
+startPolling @ app.js:595
+(anonymous) @ app.js:52
+app.js:284 Refresh error: TypeError: Cannot set properties of null (setting 'innerHTML')
+    at renderWorkflowList (app.js:357:18)
+    at refreshWorkflows (app.js:281:5)
+refreshWorkflows @ app.js:284
+await in refreshWorkflows
+(anonymous) @ app.js:597
+setInterval
+startPolling @ app.js:595
+(anonymous) @ app.js:52Understand this error
+Navigated to https://04cfe9de-8100-4d20-8638-590cf8661569-00-3tlbjzde56fkw.spock.replit.dev/
+14Fetch finished loading: GET "<URL>".
+favicon.ico:1  GET https://04cfe9de-8100-4d20-8638-590cf8661569-00-3tlbjzde56fkw.spock.replit.dev/favicon.ico 404 (Not Found)Understand this error
+13app.js:284 Refresh error: TypeError: Cannot set properties of null (setting 'innerHTML')
+    at renderWorkflowList (app.js:357:18)

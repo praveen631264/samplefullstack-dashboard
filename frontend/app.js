@@ -346,6 +346,7 @@ function buildProgressBar(wf) {
 
 function renderWorkflowList() {
   const list = document.getElementById('workflow-list');
+  if (!list) return;
   if (!allWorkflows.length) {
     list.innerHTML = `<div class="empty-state"><i data-lucide="inbox" class="empty-svg"></i><p>No workflows yet. Upload files to get started.</p></div>`;
     lucide.createIcons();
