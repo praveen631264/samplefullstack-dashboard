@@ -46,22 +46,17 @@ public class WorkflowService {
 
     public Optional<WorkflowExecution> updateStatus(String workflowId, String status, String eventType, String cusip, String eventId) {
         String normalizedStatus = "COMPLETED_WITH_FAILURE".equals(status) ? "COMPLETED" : status;
+        if ("EVENT_CREATED".equals(normalizedStatus)) {
+            normalizedStatus = "VERIFYING";
+        }
+        final String finalStatus = normalizedStatus;
         return workflowRepository.findById(workflowId).map(wf -> {
-            if (eventId != null && !"COMPLETED".equals(normalizedStatus)) {
-                wf.setEventId(eventId);
-                wf.setStatus("VERIFYING");
-                wf.setUpdatedAt(LocalDateTime.now());
-                if (eventType != null) wf.setEventType(eventType);
-                if (cusip != null) wf.setCusip(cusip);
-                logAudit(workflowId, "STATUS_VERIFYING", "Event created: " + eventId + ", verification in progress");
-                return workflowRepository.save(wf);
-            }
-            wf.setStatus(normalizedStatus);
+            wf.setStatus(finalStatus);
             wf.setUpdatedAt(LocalDateTime.now());
             if (eventType != null) wf.setEventType(eventType);
             if (cusip != null) wf.setCusip(cusip);
             if (eventId != null) wf.setEventId(eventId);
-            logAudit(workflowId, "STATUS_" + normalizedStatus, "Status updated to " + normalizedStatus);
+            logAudit(workflowId, "STATUS_" + finalStatus, "Status updated to " + finalStatus);
             return workflowRepository.save(wf);
         });
     }
