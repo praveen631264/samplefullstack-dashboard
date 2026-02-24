@@ -22,6 +22,10 @@ public class AgentConfigService {
         return repository.findByAgentName(agentName);
     }
 
+    public Optional<AgentConfig> getById(Long id) {
+        return repository.findById(id);
+    }
+
     public boolean exists(String agentName) {
         return repository.existsByAgentName(agentName);
     }

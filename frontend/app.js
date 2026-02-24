@@ -1000,18 +1000,21 @@ async function saveAgent() {
   const agentName = document.getElementById('train-agent-name').value.trim();
   if (!agentName) { showToast('Please enter an agent name', 'warning'); return; }
 
-  const payload = {
-    agentName: agentName,
-    makerPrompt: document.getElementById('train-maker-prompt').value.trim(),
-    checkerPrompt: document.getElementById('train-checker-prompt').value.trim(),
-    comparePrompt: document.getElementById('train-compare-prompt').value.trim()
-  };
+  const formData = new FormData();
+  formData.append('agentName', agentName);
+  formData.append('makerPrompt', document.getElementById('train-maker-prompt').value.trim());
+  formData.append('checkerPrompt', document.getElementById('train-checker-prompt').value.trim());
+  formData.append('comparePrompt', document.getElementById('train-compare-prompt').value.trim());
+
+  const makerFileInput = document.getElementById('train-maker-file');
+  const checkerFileInput = document.getElementById('train-checker-file');
+  if (makerFileInput.files.length > 0) formData.append('makerFile', makerFileInput.files[0]);
+  if (checkerFileInput.files.length > 0) formData.append('checkerFile', checkerFileInput.files[0]);
 
   try {
     const res = await fetch(`${API_BASE}/api/agents`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: formData
     });
     const data = await res.json();
     if (!res.ok) {
@@ -1101,6 +1104,13 @@ async function loadSavedAgents() {
           </div>
         </div>
         <div class="saved-agent-body">
+          <div class="agent-documents-section">
+            <div class="agent-documents-title"><i data-lucide="paperclip" class="prompt-label-icon"></i> Training Documents</div>
+            <div class="agent-documents-list">
+              ${a.makerFileName ? `<a href="${API_BASE}/api/agents/${a.id}/file/maker" class="agent-doc-link" download data-testid="link-download-maker-${a.id}"><i data-lucide="file-spreadsheet"></i> ${a.makerFileName}</a>` : '<span class="agent-doc-none">No maker file</span>'}
+              ${a.checkerFileName ? `<a href="${API_BASE}/api/agents/${a.id}/file/checker" class="agent-doc-link" download data-testid="link-download-checker-${a.id}"><i data-lucide="file-text"></i> ${a.checkerFileName}</a>` : '<span class="agent-doc-none">No checker file</span>'}
+            </div>
+          </div>
           <div class="prompt-accordion">
             <div class="prompt-accordion-header" onclick="this.parentElement.classList.toggle('open')">
               <div class="prompt-accordion-title"><i data-lucide="file-text" class="prompt-label-icon"></i> Maker Prompt</div>

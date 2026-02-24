@@ -29,6 +29,20 @@ public class AgentConfig {
     @Column(name = "compare_prompt", columnDefinition = "TEXT")
     private String comparePrompt;
 
+    @Column(name = "maker_file_name")
+    private String makerFileName;
+
+    @Lob
+    @Column(name = "maker_file_data")
+    private byte[] makerFileData;
+
+    @Column(name = "checker_file_name")
+    private String checkerFileName;
+
+    @Lob
+    @Column(name = "checker_file_data")
+    private byte[] checkerFileData;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now(ZoneId.of("America/New_York"));
 
