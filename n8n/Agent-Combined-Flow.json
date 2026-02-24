@@ -232,7 +232,7 @@
         {
             "parameters": {
                 "promptType": "define",
-                "text": "={{ $('Receive Combined Inputs').item.json.body?.comparePrompt }}\n\nMaker Data:\n{{ JSON.stringify($('Create Event API').item.json) }}\n\nChecker Data:\n{{ JSON.stringify($('AI Extract Source 2 JSON').item.json) }}",
+                "text": "={{ $('Receive Combined Inputs').first().json.body?.comparePrompt }}\n\nMaker Data:\n{{ JSON.stringify($('Create Event API').first().json) }}\n\nChecker Data:\n{{ JSON.stringify($('AI Extract Source 2 JSON').first().json) }}",
                 "hasOutputParser": true,
                 "options": {}
             },
@@ -282,7 +282,7 @@
         {
             "parameters": {
                 "method": "PUT",
-                "url": "={{ $('Receive Combined Inputs').item.json.body?.baseUrl }}/api/events/{{ $('Create Event API').item.json.eventId }}",
+                "url": "={{ $('Receive Combined Inputs').first().json.body?.baseUrl }}/api/events/{{ $('Create Event API').first().json.eventId }}",
                 "sendHeaders": true,
                 "headerParameters": {
                     "parameters": [
@@ -309,7 +309,7 @@
         {
             "parameters": {
                 "method": "PUT",
-                "url": "={{ $('Receive Combined Inputs').item.json.body?.baseUrl }}/api/workflows/{{ $('Receive Combined Inputs').item.json.body?.workflowId }}/status",
+                "url": "={{ $('Receive Combined Inputs').first().json.body?.baseUrl }}/api/workflows/{{ $('Receive Combined Inputs').first().json.body?.workflowId }}/status",
                 "sendHeaders": true,
                 "headerParameters": {
                     "parameters": [
@@ -321,7 +321,7 @@
                 },
                 "sendBody": true,
                 "specifyBody": "json",
-                "jsonBody": "={{ JSON.stringify({ status: $('Compare S1 & S2').item.json.output.status === 'Verified' ? 'COMPLETED' : 'COMPLETED_WITH_FAILURE', eventType: $('Create Event API').item.json.event_type, cusip: $('Create Event API').item.json.cusip }) }}",
+                "jsonBody": "={{ JSON.stringify({ status: $('Compare S1 & S2').first().json.output.status === 'Verified' ? 'COMPLETED' : 'COMPLETED_WITH_FAILURE', eventType: $('Create Event API').first().json.eventType, cusip: $('Create Event API').first().json.cusip }) }}",
                 "options": {}
             },
             "type": "n8n-nodes-base.httpRequest",
