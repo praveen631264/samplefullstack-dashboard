@@ -723,7 +723,7 @@ async function checkTrainResults(type) {
 }
 
 function submitTrainerViaBrowserForm(sessionId, type, prompt, file) {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     const iframeName = 'trainer_frame_' + Date.now();
     const iframe = document.createElement('iframe');
     iframe.name = iframeName;
@@ -761,6 +761,17 @@ function submitTrainerViaBrowserForm(sessionId, type, prompt, file) {
     addHidden('prompt', prompt);
     addHidden('baseUrl', CALLBACK_BASE_URL);
     addHidden('callbackUrl', `${CALLBACK_BASE_URL}/api/training/callback`);
+
+    if (type === 'compare') {
+      try {
+        const res = await fetch(`${API_BASE}/api/training/session/${sessionId}`);
+        const session = await res.json();
+        addHidden('makerResult', session.makerResult || '{}');
+        addHidden('checkerResult', session.checkerResult || '{}');
+      } catch (err) {
+        console.error('Failed to fetch session results for comparison', err);
+      }
+    }
 
     document.body.appendChild(form);
 
