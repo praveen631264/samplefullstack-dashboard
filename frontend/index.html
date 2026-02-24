@@ -136,7 +136,7 @@
     <div class="view" id="view-train">
       <div class="train-sub-tabs">
         <button class="train-sub-tab active" data-subtab="available" onclick="switchTrainSubTab('available')" data-testid="tab-available-agents">
-          <i data-lucide="users" class="tab-svg"></i> Available AI Agents
+          Available AI Agents
         </button>
         <button class="train-sub-tab" data-subtab="create" onclick="switchTrainSubTab('create')" data-testid="tab-create-agents">
           Create AI Agents
@@ -146,9 +146,7 @@
       <div class="train-subtab-content active" id="subtab-available">
         <div class="train-layout">
           <div class="saved-agents-section card" id="saved-agents-section">
-            <div class="card-header">
-              <i data-lucide="users" class="header-icon"></i>
-              <h2>Available AI Agents</h2>
+            <div class="card-header" style="display:none;">
             </div>
             <div class="saved-agents-list" id="saved-agents-list" data-testid="list-saved-agents"></div>
           </div>
