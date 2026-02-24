@@ -24,15 +24,16 @@ jobs:
       run: |
         mvn clean package -DskipTests
 
-    - name: Pre-clean EC2
+    - name: Prepare EC2
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
+        command_timeout: 5m
         script: |
-          mkdir -p /home/ubuntu/app
-          rm -rf /home/ubuntu/app/target
+          mkdir -p /home/ubuntu/app/target
+          rm -rf /home/ubuntu/app/target/*.jar
           rm -f /home/ubuntu/app/app.jar
 
     - name: Copy Files to EC2
@@ -51,32 +52,26 @@ jobs:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
-        command_timeout: 15m
+        command_timeout: 10m
         script: |
           cd /home/ubuntu/app
           
-          # Rename JAR for consistency
+          # Rename JAR
           mv target/*.jar ./app.jar
-          
-          # Clean up temporary upload structure
           rm -rf target
           
-          # Eradicate zombie processes on port 5000 and port 80
-          # Use lsof/kill as fallback if fuser is missing
-          sudo fuser -k 5000/tcp 2>/dev/null || true
+          # Clean ports (lsof/kill fallback)
           sudo fuser -k 80/tcp 2>/dev/null || true
-          
-          # Fallback kill logic
-          sudo kill -9 $(sudo lsof -t -i:5000) 2>/dev/null || true
+          sudo fuser -k 5000/tcp 2>/dev/null || true
           sudo kill -9 $(sudo lsof -t -i:80) 2>/dev/null || true
+          sudo kill -9 $(sudo lsof -t -i:5000) 2>/dev/null || true
           
           sudo systemctl stop apache2 2>/dev/null || true
           sudo systemctl disable apache2 2>/dev/null || true
 
-          # Stop existing app if running
+          # Restart App
           sudo pm2 delete test-orchestrator 2>/dev/null || true
-
-          # Start the Spring Boot app with absolute paths
+          
           DB_URL="${{ secrets.DATABASE_URL }}"
           DB_HOST=$(echo $DB_URL | sed -e 's|.*@||' -e 's|:.*||')
 
@@ -88,13 +83,7 @@ jobs:
                NODE_ENV="production" \
                pm2 start /usr/bin/java --name test-orchestrator -- -jar /home/ubuntu/app/app.jar
 
-          # Diagnostics: Monitoring Startup
-          echo "Waiting for application to start..."
-          sleep 60
+          # Verify
+          sleep 30
           sudo pm2 status
-          sudo pm2 logs test-orchestrator --lines 100 --no-daemon &
-          LOG_PID=$!
-          sleep 60
-          sudo kill $LOG_PID || true
-          
           sudo pm2 save
