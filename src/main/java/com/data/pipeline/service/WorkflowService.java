@@ -51,6 +51,11 @@ public class WorkflowService {
         }
         final String finalStatus = normalizedStatus;
         return workflowRepository.findById(workflowId).map(wf -> {
+            int currentRank = statusRank(wf.getStatus());
+            int newRank = statusRank(finalStatus);
+            if (newRank < currentRank) {
+                return wf;
+            }
             wf.setStatus(finalStatus);
             wf.setUpdatedAt(LocalDateTime.now());
             if (eventType != null) wf.setEventType(eventType);
@@ -73,6 +78,17 @@ public class WorkflowService {
 
     public List<AuditTrail> getAuditTrail() {
         return auditRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    private int statusRank(String status) {
+        if (status == null) return 0;
+        switch (status) {
+            case "STARTED": return 1;
+            case "PARSING": return 2;
+            case "VERIFYING": return 3;
+            case "COMPLETED": return 4;
+            default: return 0;
+        }
     }
 
     private synchronized String generateWorkflowId() {
