@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -32,8 +33,8 @@ public class WorkflowService {
         wf.setSource1FileName(s1Name);
         wf.setSource2FileName(s2Name);
         wf.setStatus("STARTED");
-        wf.setCreatedAt(LocalDateTime.now());
-        wf.setUpdatedAt(LocalDateTime.now());
+        wf.setCreatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
+        wf.setUpdatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
 
         WorkflowExecution saved = workflowRepository.save(wf);
         logAudit(saved.getWorkflowId(), "WORKFLOW_CREATED", "Started workflow for: " + description);
@@ -57,7 +58,7 @@ public class WorkflowService {
                 return wf;
             }
             wf.setStatus(finalStatus);
-            wf.setUpdatedAt(LocalDateTime.now());
+            wf.setUpdatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
             if (eventType != null) wf.setEventType(eventType);
             if (cusip != null) wf.setCusip(cusip);
             if (eventId != null) wf.setEventId(eventId);
@@ -71,8 +72,8 @@ public class WorkflowService {
         audit.setWorkflowId(workflowId);
         audit.setAction(action);
         audit.setDetails(details);
-        audit.setCreatedAt(LocalDateTime.now());
-        audit.setCreatedAt(LocalDateTime.now());
+        audit.setCreatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
+        audit.setCreatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
         auditRepository.save(audit);
     }
 
@@ -92,7 +93,7 @@ public class WorkflowService {
     }
 
     private synchronized String generateWorkflowId() {
-        String datePrefix = "EVT-" + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy"));
+        String datePrefix = "EVT-" + LocalDate.now(ZoneId.of("America/New_York")).format(DateTimeFormatter.ofPattern("ddMMyyyy"));
         long count = workflowRepository.countByWorkflowIdStartingWith(datePrefix);
         long sequence = count + 1;
         return datePrefix + "-" + String.format("%03d", sequence);

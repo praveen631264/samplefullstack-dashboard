@@ -755,13 +755,13 @@ function formatBytes(bytes) {
 
 function formatDetailedTime(dateStr) {
   if (!dateStr) return '';
-  return new Date(dateStr).toLocaleString();
+  return new Date(dateStr).toLocaleString('en-US', { timeZone: 'America/New_York' });
 }
 
 function formatShortTime(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' });
 }
 
 function formatJSON(data) {
@@ -774,9 +774,8 @@ function formatJSON(data) {
 
 function generateSessionId() {
   const now = new Date();
-  const dd = String(now.getDate()).padStart(2, '0');
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const yyyy = now.getFullYear();
+  const estStr = now.toLocaleDateString('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const [mm, dd, yyyy] = estStr.split('/');
   const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
   return `TRN-${dd}${mm}${yyyy}-${rand}`;
 }

@@ -36,7 +36,7 @@ public class SampleEventService {
     }
 
     public synchronized String generateCaId() {
-        String datePrefix = "CA-" + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyy"));
+        String datePrefix = "CA-" + LocalDate.now(java.time.ZoneId.of("America/New_York")).format(DateTimeFormatter.ofPattern("ddMMyy"));
         long count = repository.countByEventIdStartingWith(datePrefix);
         long sequence = count + 1;
         return datePrefix + "-" + String.format("%03d", sequence);

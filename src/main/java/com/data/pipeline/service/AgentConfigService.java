@@ -27,9 +27,9 @@ public class AgentConfigService {
     }
 
     public AgentConfig save(AgentConfig config) {
-        config.setUpdatedAt(LocalDateTime.now());
+        config.setUpdatedAt(LocalDateTime.now(java.time.ZoneId.of("America/New_York")));
         if (config.getCreatedAt() == null) {
-            config.setCreatedAt(LocalDateTime.now());
+            config.setCreatedAt(LocalDateTime.now(java.time.ZoneId.of("America/New_York")));
         }
         return repository.save(config);
     }

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "workflow_executions")
@@ -23,6 +24,6 @@ public class WorkflowExecution {
     private String cusip;
     private String eventType;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private LocalDateTime createdAt = LocalDateTime.now(ZoneId.of("America/New_York"));
+    private LocalDateTime updatedAt = LocalDateTime.now(ZoneId.of("America/New_York"));
 }
