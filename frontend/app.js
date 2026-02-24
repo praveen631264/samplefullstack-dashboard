@@ -292,11 +292,11 @@ function renderSubmittedCard(wf) {
   const statusMap = {
     'STARTED': 'Started', 'PARSING': 'In Progress',
     'EVENT_CREATED': 'Event Created', 'VERIFYING': 'Verifying',
-    'COMPLETED': 'Completed', 'COMPLETED_WITH_FAILURE': 'Failed', 'FAILED': 'Failed'
+    'COMPLETED': 'Completed', 'COMPLETED_WITH_FAILURE': 'Completed', 'FAILED': 'Failed'
   };
   const statusLabel = statusMap[wf.status] || wf.status;
-  const isComplete = wf.status === 'COMPLETED';
-  const isFailed = wf.status === 'FAILED' || wf.status === 'COMPLETED_WITH_FAILURE';
+  const isComplete = wf.status === 'COMPLETED' || wf.status === 'COMPLETED_WITH_FAILURE';
+  const isFailed = wf.status === 'FAILED';
   const statusClass = isComplete ? 'status-completed' : isFailed ? 'status-failed' : 'status-progress';
 
   const caIdRow = wf.eventId ? `
@@ -398,15 +398,15 @@ function getStepIndex(status) {
   if (status === 'STARTED') return 0;
   if (status === 'PARSING' || status === 'EVENT_CREATED') return 1;
   if (status === 'VERIFYING') return 2;
-  if (status === 'COMPLETED') return 3;
-  if (status === 'COMPLETED_WITH_FAILURE' || status === 'FAILED') return -1;
+  if (status === 'COMPLETED' || status === 'COMPLETED_WITH_FAILURE') return 3;
+  if (status === 'FAILED') return -1;
   return 0;
 }
 
 function buildProgressBar(wf) {
   const stepIdx = getStepIndex(wf.status);
-  const isFailed = wf.status === 'FAILED' || wf.status === 'COMPLETED_WITH_FAILURE';
-  const isComplete = wf.status === 'COMPLETED';
+  const isFailed = wf.status === 'FAILED';
+  const isComplete = wf.status === 'COMPLETED' || wf.status === 'COMPLETED_WITH_FAILURE';
   const fillPct = isComplete ? 100 : isFailed ? 0 : (stepIdx / (WORKFLOW_STEPS.length - 1)) * 100;
 
   const createdTime = formatShortTime(wf.createdAt);
@@ -704,7 +704,7 @@ function formatStatus(status) {
   const labels = {
     'STARTED': 'Started', 'PARSING': 'In Progress',
     'EVENT_CREATED': 'Event Created', 'VERIFYING': 'Verifying',
-    'COMPLETED': 'Completed', 'COMPLETED_WITH_FAILURE': 'Failed', 'FAILED': 'Failed'
+    'COMPLETED': 'Completed', 'COMPLETED_WITH_FAILURE': 'Completed', 'FAILED': 'Failed'
   };
   return labels[status] || status;
 }
