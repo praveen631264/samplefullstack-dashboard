@@ -55,6 +55,13 @@
           </div>
           <form id="workflow-form" onsubmit="submitWorkflow(event)">
             <div class="form-group">
+              <label for="agent-select"><i data-lucide="bot" class="label-icon"></i> Agent</label>
+              <select id="agent-select" class="input-field" data-testid="select-agent">
+                <option value="">Default (No Agent)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
               <label for="source1"><i data-lucide="file-spreadsheet" class="label-icon"></i> Upload Maker File</label>
               <div class="file-input-wrap" id="dropzone-source1" onclick="document.getElementById('source1').click()" data-testid="input-maker-file">
                 <i data-lucide="upload-cloud" class="file-upload-icon"></i>

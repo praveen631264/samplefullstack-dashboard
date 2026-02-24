@@ -80,6 +80,20 @@ public class AgentTrainingController {
                 "status", session.getStatus()));
     }
 
+    @PutMapping("/session/{sessionId}/prompt")
+    public ResponseEntity<Map<String, String>> updatePrompt(
+            @PathVariable String sessionId,
+            @RequestBody Map<String, String> payload) {
+        String type = payload.get("type");
+        String prompt = payload.get("prompt");
+        AgentTrainingSession session = trainingService.getOrCreateSession(sessionId);
+        if ("maker".equals(type)) session.setMakerPrompt(prompt);
+        else if ("checker".equals(type)) session.setCheckerPrompt(prompt);
+        else if ("compare".equals(type)) session.setComparePrompt(prompt);
+        log.info("Prompt saved: sessionId={}, type={}", sessionId, type);
+        return ResponseEntity.ok(Map.of("status", "saved", "type", type));
+    }
+
     @PostMapping("/callback")
     public ResponseEntity<Map<String, String>> n8nCallback(@RequestBody Map<String, String> payload) {
         String sessionId = payload.get("sessionId");
