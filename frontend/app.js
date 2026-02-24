@@ -1,5 +1,6 @@
 const API_BASE = window.location.origin;
 const N8N_WEBHOOK_URL = 'https://n8n.aix.devx.systems/webhook/cbc9a13e-952e-4708-83d4-eac803e99a93';
+const N8N_TRAINER_WEBHOOK_URL = 'https://n8n.aix.devx.systems/webhook/trainer-micro';
 const CALLBACK_BASE_URL = window.location.origin;
 let allWorkflows = [];
 let allEvents = [];
@@ -345,6 +346,7 @@ function buildProgressBar(wf) {
 
 function renderWorkflowList() {
   const list = document.getElementById('workflow-list');
+  if (!list) return;
   if (!allWorkflows.length) {
     list.innerHTML = `<div class="empty-state"><i data-lucide="inbox" class="empty-svg"></i><p>No workflows yet. Upload files to get started.</p></div>`;
     lucide.createIcons();
@@ -654,25 +656,32 @@ function formatJSON(data) {
   } catch { return data; }
 }
 
+function generateSessionId() {
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `TRN-${dd}${mm}${yyyy}-${rand}`;
+}
+
 let trainState = { 
-  sessionId: '',
+  sessionId: generateSessionId(),
   step: 1, 
   makerFinalized: false, 
   checkerFinalized: false, 
   compareFinalized: false 
 };
 
+(function initTrainSession() {
+  const el = document.getElementById('train-session-id');
+  if (el) el.value = trainState.sessionId;
+})();
+
 async function checkTrainResults(type) {
-  const sessionIdInput = document.getElementById('train-session-id');
-  const sessionId = sessionIdInput.value.trim();
+  const sessionId = trainState.sessionId;
   const promptEl = document.getElementById(`train-${type}-prompt`);
   const prompt = promptEl ? promptEl.value.trim() : '';
-
-  if (!sessionId) {
-    showToast('Please enter a Unique ID first', 'warning');
-    return;
-  }
-  trainState.sessionId = sessionId;
 
   if (!prompt) {
     showToast('Please enter a prompt first', 'warning');
@@ -697,22 +706,12 @@ async function checkTrainResults(type) {
   lucide.createIcons();
 
   try {
-    const formData = new FormData();
-    formData.append('sessionId', sessionId);
-    formData.append('type', type);
-    formData.append('prompt', prompt);
-    if (file) formData.append('file', file);
+    await fetch(`${API_BASE}/api/training/session/${sessionId}`);
 
-    const res = await fetch(`${API_BASE}/api/training/check`, {
-      method: 'POST',
-      body: formData
-    });
-
-    if (!res.ok) throw new Error('Failed to initiate training');
+    await submitTrainerViaBrowserForm(sessionId, type, prompt, file);
 
     showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} check initiated. Waiting for AI...`, 'info');
     
-    // Start polling for results
     pollTrainingResults(sessionId, type);
 
   } catch (err) {
@@ -720,6 +719,59 @@ async function checkTrainResults(type) {
     resultsContent.textContent = 'Error: ' + err.message;
     showToast('Error: ' + err.message, 'error');
   }
+}
+
+function submitTrainerViaBrowserForm(sessionId, type, prompt, file) {
+  return new Promise((resolve) => {
+    const iframeName = 'trainer_frame_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = N8N_TRAINER_WEBHOOK_URL;
+    form.enctype = 'multipart/form-data';
+    form.target = iframeName;
+    form.style.display = 'none';
+
+    if (file) {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.name = 'file';
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      fileInput.files = dt.files;
+      form.appendChild(fileInput);
+    }
+
+    const addHidden = (name, value) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    };
+    addHidden('sessionId', sessionId);
+    addHidden('type', type);
+    addHidden('prompt', prompt);
+    addHidden('baseUrl', CALLBACK_BASE_URL);
+    addHidden('callbackUrl', `${CALLBACK_BASE_URL}/api/training/callback`);
+
+    document.body.appendChild(form);
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        try { document.body.removeChild(form); } catch (e) { }
+        try { document.body.removeChild(iframe); } catch (e) { }
+      }, 2000);
+      resolve(true);
+    };
+
+    form.submit();
+    setTimeout(() => { resolve(true); }, 15000);
+  });
 }
 
 function pollTrainingResults(sessionId, type) {
