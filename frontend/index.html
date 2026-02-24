@@ -54,13 +54,6 @@
           </div>
           <form id="workflow-form" onsubmit="submitWorkflow(event)">
             <div class="form-group">
-              <label for="agent-select"><i data-lucide="bot" class="label-icon"></i> AI Agent</label>
-              <select id="agent-select" class="input-field" data-testid="select-agent">
-                <option value="">Default</option>
-              </select>
-            </div>
-
-            <div class="form-group">
               <label for="source1"><i data-lucide="file-spreadsheet" class="label-icon"></i> Upload Maker File</label>
               <div class="file-input-wrap" id="dropzone-source1" onclick="document.getElementById('source1').click()" data-testid="input-maker-file">
                 <i data-lucide="upload-cloud" class="file-upload-icon"></i>
@@ -80,6 +73,13 @@
                 <input type="file" id="source2" name="source2" accept=".pdf" hidden
                   onchange="handleFileSelect(this, 'source2-name')">
               </div>
+            </div>
+
+            <div class="form-group">
+              <label for="agent-select"><i data-lucide="bot" class="label-icon"></i> AI Agent</label>
+              <select id="agent-select" class="input-field" data-testid="select-agent">
+                <option value="">Default</option>
+              </select>
             </div>
 
             <button type="submit" class="btn-submit" id="submit-btn" data-testid="button-submit">
