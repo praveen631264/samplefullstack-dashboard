@@ -2,6 +2,7 @@ const API_BASE = window.location.origin;
 const N8N_WEBHOOK_URL = 'https://n8n.aix.devx.systems/webhook/cbc9a13e-952e-4708-83d4-eac803e99a93';
 const N8N_TRAINER_WEBHOOK_URL = 'https://n8n.aix.devx.systems/webhook/trainer-micro';
 const N8N_COMPARE_WEBHOOK_URL = 'https://n8n.aix.devx.systems/webhook/compare-micro';
+const N8N_AGENT_COMBINED_URL = 'https://n8n.aix.devx.systems/webhook/agent-combined-flow';
 const CALLBACK_BASE_URL = window.location.origin;
 let allWorkflows = [];
 let allEvents = [];
@@ -14,7 +15,10 @@ function switchView(view) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById(`view-${view}`).classList.add('active');
   document.querySelector(`[data-view="${view}"]`).classList.add('active');
-  if (view === 'launcher' && submittedWorkflowId) pollSubmittedWorkflow();
+  if (view === 'launcher') {
+    loadAgentDropdown();
+    if (submittedWorkflowId) pollSubmittedWorkflow();
+  }
   if (view === 'events') loadEvents();
   if (view === 'train') loadSavedAgents();
   if (view === 'bpmn') renderBPMN();
@@ -50,9 +54,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  loadAgentDropdown();
   startPolling();
   renderBPMN();
 });
+
+let cachedAgents = [];
+
+async function loadAgentDropdown() {
+  try {
+    const res = await fetch(`${API_BASE}/api/agents`);
+    cachedAgents = await res.json();
+    const select = document.getElementById('agent-select');
+    if (!select) return;
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">Default (No Agent)</option>';
+    cachedAgents.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = a.agentName;
+      select.appendChild(opt);
+    });
+    if (currentVal) select.value = currentVal;
+  } catch (err) {
+    console.error('Load agent dropdown error:', err);
+  }
+}
 
 async function submitWorkflow(e) {
   e.preventDefault();
@@ -60,6 +87,8 @@ async function submitWorkflow(e) {
   const source1Input = document.getElementById('source1');
   const source2Input = document.getElementById('source2');
   const description = document.getElementById('description').value;
+  const agentSelect = document.getElementById('agent-select');
+  const selectedAgentId = agentSelect ? agentSelect.value : '';
 
   if (!source1Input.files.length && !source2Input.files.length) {
     showToast('Please upload at least one file', 'warning');
@@ -85,7 +114,14 @@ async function submitWorkflow(e) {
     submittedWorkflowId = workflowId;
     showSubmittedCard(workflow);
 
-    await submitToN8nViaForm(source1Input, source2Input, workflowId, description);
+    if (selectedAgentId) {
+      const agent = cachedAgents.find(a => String(a.id) === selectedAgentId);
+      if (agent) {
+        await submitAgentCombinedViaForm(source1Input, source2Input, workflowId, agent);
+      }
+    } else {
+      await submitToN8nViaForm(source1Input, source2Input, workflowId, description);
+    }
 
     try {
       await fetch(`${API_BASE}/api/workflows/${workflowId}/status`, {
@@ -158,6 +194,70 @@ function submitToN8nViaForm(source1Input, source2Input, workflowId, description)
     };
     addHidden('workflowId', workflowId);
     addHidden('description', description || '');
+    addHidden('baseUrl', CALLBACK_BASE_URL);
+    addHidden('callbackUrl', `${CALLBACK_BASE_URL}/api/workflows/${workflowId}/status`);
+
+    document.body.appendChild(form);
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        try { document.body.removeChild(form); } catch (e) { }
+        try { document.body.removeChild(iframe); } catch (e) { }
+      }, 2000);
+      resolve(true);
+    };
+
+    form.submit();
+    setTimeout(() => { resolve(true); }, 15000);
+  });
+}
+
+function submitAgentCombinedViaForm(source1Input, source2Input, workflowId, agent) {
+  return new Promise((resolve) => {
+    const iframeName = 'agent_frame_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = N8N_AGENT_COMBINED_URL;
+    form.enctype = 'multipart/form-data';
+    form.target = iframeName;
+    form.style.display = 'none';
+
+    if (source1Input.files.length > 0) {
+      const f1 = document.createElement('input');
+      f1.type = 'file';
+      f1.name = 'makerFile';
+      const dt1 = new DataTransfer();
+      dt1.items.add(source1Input.files[0]);
+      f1.files = dt1.files;
+      form.appendChild(f1);
+    }
+
+    if (source2Input.files.length > 0) {
+      const f2 = document.createElement('input');
+      f2.type = 'file';
+      f2.name = 'checkerFile';
+      const dt2 = new DataTransfer();
+      dt2.items.add(source2Input.files[0]);
+      f2.files = dt2.files;
+      form.appendChild(f2);
+    }
+
+    const addHidden = (name, value) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    };
+    addHidden('workflowId', workflowId);
+    addHidden('makerPrompt', agent.makerPrompt || '');
+    addHidden('checkerPrompt', agent.checkerPrompt || '');
+    addHidden('comparePrompt', agent.comparePrompt || '');
     addHidden('baseUrl', CALLBACK_BASE_URL);
     addHidden('callbackUrl', `${CALLBACK_BASE_URL}/api/workflows/${workflowId}/status`);
 
