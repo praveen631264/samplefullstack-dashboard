@@ -78,7 +78,7 @@
         {
             "parameters": {
                 "promptType": "define",
-                "text": "={{ Receive Combined Inputs.item.json.body?.makerPrompt }}\n\nData from Maker File:\n{{ JSON.stringify() }}",
+                "text": "={{ $('Receive Combined Inputs').item.json.body?.makerPrompt }}\n\nData from Maker File:\n{{ JSON.stringify($json) }}",
                 "hasOutputParser": true,
                 "options": {}
             },
@@ -94,7 +94,7 @@
         {
             "parameters": {
                 "promptType": "define",
-                "text": "={{ Receive Combined Inputs.item.json.body?.checkerPrompt }}\n\nData from Checker File:\n{{ JSON.stringify() }}",
+                "text": "={{ $('Receive Combined Inputs').item.json.body?.checkerPrompt }}\n\nData from Checker File:\n{{ JSON.stringify($json) }}",
                 "hasOutputParser": true,
                 "options": {}
             },
@@ -232,7 +232,7 @@
         {
             "parameters": {
                 "promptType": "define",
-                "text": "={{ .item.json.body?.comparePrompt }}\n\nMaker Data:\n{{ JSON.stringify(.item.json) }}\n\nChecker Data:\n{{ JSON.stringify(.item.json.output) }}",
+                "text": "={{ $('Receive Combined Inputs').item.json.body?.comparePrompt }}\n\nMaker Data:\n{{ JSON.stringify($('Create Event API').item.json) }}\n\nChecker Data:\n{{ JSON.stringify($('AI Extract Source 2 JSON').item.json.output) }}",
                 "hasOutputParser": true,
                 "options": {}
             },
