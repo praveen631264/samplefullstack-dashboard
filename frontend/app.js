@@ -86,7 +86,8 @@ async function submitWorkflow(e) {
   const btn = document.getElementById('submit-btn');
   const source1Input = document.getElementById('source1');
   const source2Input = document.getElementById('source2');
-  const description = document.getElementById('description').value;
+  const descEl = document.getElementById('description');
+  const description = descEl ? descEl.value : '';
   const agentSelect = document.getElementById('agent-select');
   const selectedAgentId = agentSelect ? agentSelect.value : '';
 
