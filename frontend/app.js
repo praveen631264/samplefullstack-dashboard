@@ -388,7 +388,7 @@ async function refreshWorkflows() {
 }
 
 const WORKFLOW_STEPS = [
-  { key: 'STARTED', label: 'Agent Started', icon: 'play' },
+  { key: 'STARTED', label: 'AI Agent Started', icon: 'play' },
   { key: 'PARSING', label: 'Creation in Progress', icon: 'cog' },
   { key: 'VERIFYING', label: 'Verification in Progress', icon: 'shield-check' },
   { key: 'COMPLETED', label: 'Completed', icon: 'check-circle-2' }
