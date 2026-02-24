@@ -72,50 +72,12 @@ public class AgentTrainingController {
         String targetWebhookUrl = "compare".equals(type) ? n8nCompareUrl : n8nTrainerUrl;
         log.info("Training check initiated: sessionId={}, type={}, webhookUrl={}", sessionId, type, targetWebhookUrl);
 
-        try {
-            RestTemplate restTemplate = new RestTemplate();
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        // The frontend iframe will now handle sending the actual HTTP request to n8n
+        // to bypass SSO restrictions. This backend endpoint just updates the local
+        // session state.
 
-            if (n8nApiToken != null && !n8nApiToken.isEmpty()) {
-                headers.set("Authorization", "Bearer " + n8nApiToken);
-            }
-            if (n8nOAuth2Cookie != null && !n8nOAuth2Cookie.isEmpty()) {
-                headers.set("Cookie", n8nOAuth2Cookie);
-            }
-
-            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-            body.add("sessionId", sessionId);
-            body.add("type", type);
-            body.add("prompt", prompt);
-            body.add("baseUrl", callbackBaseUrl);
-
-            if ("compare".equals(type)) {
-                body.add("makerResult", session.getMakerResult() != null ? session.getMakerResult() : "{}");
-                body.add("checkerResult", session.getCheckerResult() != null ? session.getCheckerResult() : "{}");
-            }
-
-            if (file != null && !file.isEmpty()) {
-                final String originalFilename = file.getOriginalFilename();
-                body.add("file", new org.springframework.core.io.ByteArrayResource(file.getBytes()) {
-                    @Override
-                    public String getFilename() {
-                        return originalFilename;
-                    }
-                });
-                log.info("File attached: {}", originalFilename);
-            }
-
-            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            var response = restTemplate.postForEntity(targetWebhookUrl, requestEntity, String.class);
-            log.info("n8n response: status={}, body={}", response.getStatusCode(), response.getBody());
-
-            return ResponseEntity.ok(Map.of("message", "Training initiated", "status", session.getStatus()));
-        } catch (Exception e) {
-            log.error("Failed to call n8n trainer webhook: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Failed to contact n8n: " + e.getMessage()));
-        }
+        return ResponseEntity.ok(Map.of("message", "Training session prepared. Frontend iframe will initiate.",
+                "status", session.getStatus()));
     }
 
     @PostMapping("/callback")
