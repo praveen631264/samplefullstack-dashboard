@@ -722,29 +722,55 @@ async function checkTrainResults(type) {
 }
 
 function submitTrainerViaBrowserForm(sessionId, type, prompt, file) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const formData = new FormData();
-      formData.append('sessionId', sessionId);
-      formData.append('type', type);
-      formData.append('prompt', prompt);
-      if (file) {
-        formData.append('file', file);
-      }
+  return new Promise((resolve) => {
+    const iframeName = 'trainer_frame_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
 
-      const res = await fetch(`${API_BASE}/api/training/check`, {
-        method: 'POST',
-        body: formData
-      });
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = N8N_TRAINER_WEBHOOK_URL;
+    form.enctype = 'multipart/form-data';
+    form.target = iframeName;
+    form.style.display = 'none';
 
-      if (!res.ok) {
-        throw new Error(`Server returned ${res.status}`);
-      }
-      resolve(true);
-    } catch (err) {
-      console.error('Failed to submit training check:', err);
-      reject(err);
+    if (file) {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.name = 'file';
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      fileInput.files = dt.files;
+      form.appendChild(fileInput);
     }
+
+    const addHidden = (name, value) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    };
+    addHidden('sessionId', sessionId);
+    addHidden('type', type);
+    addHidden('prompt', prompt);
+    addHidden('baseUrl', CALLBACK_BASE_URL);
+    addHidden('callbackUrl', `${CALLBACK_BASE_URL}/api/training/callback`);
+
+    document.body.appendChild(form);
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        try { document.body.removeChild(form); } catch (e) { }
+        try { document.body.removeChild(iframe); } catch (e) { }
+      }, 2000);
+      resolve(true);
+    };
+
+    form.submit();
+    setTimeout(() => { resolve(true); }, 15000);
   });
 }
 
