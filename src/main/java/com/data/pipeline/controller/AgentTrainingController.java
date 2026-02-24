@@ -17,16 +17,27 @@ import org.springframework.util.MultiValueMap;
 
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @RequestMapping("/api/training")
 @Tag(name = "Agent Training", description = "Endpoints for training AI agents")
 public class AgentTrainingController {
+
+    private static final Logger log = LoggerFactory.getLogger(AgentTrainingController.class);
 
     @Autowired
     private AgentTrainingService trainingService;
 
     @Value("${app.n8n.trainer-webhook-url:https://n8n.aix.devx.systems/webhook/trainer-micro}")
     private String n8nTrainerUrl;
+
+    @Value("${app.n8n.api-token:}")
+    private String n8nApiToken;
+
+    @Value("${app.n8n.oauth2-cookie:}")
+    private String n8nOAuth2Cookie;
 
     @Value("${app.callback-base-url:http://localhost:5000}")
     private String callbackBaseUrl;
@@ -55,11 +66,19 @@ public class AgentTrainingController {
 
         session.setStatus(type.toUpperCase() + "_PROCESSING");
 
-        // Call n8n
+        log.info("Training check initiated: sessionId={}, type={}, webhookUrl={}", sessionId, type, n8nTrainerUrl);
+
         try {
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+            if (n8nApiToken != null && !n8nApiToken.isEmpty()) {
+                headers.set("Authorization", "Bearer " + n8nApiToken);
+            }
+            if (n8nOAuth2Cookie != null && !n8nOAuth2Cookie.isEmpty()) {
+                headers.set("Cookie", n8nOAuth2Cookie);
+            }
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("sessionId", sessionId);
@@ -75,14 +94,16 @@ public class AgentTrainingController {
                         return originalFilename;
                     }
                 });
+                log.info("File attached: {}", originalFilename);
             }
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            // We fire and forget or just log the response. n8n will call back.
-            restTemplate.postForEntity(n8nTrainerUrl, requestEntity, String.class);
+            var response = restTemplate.postForEntity(n8nTrainerUrl, requestEntity, String.class);
+            log.info("n8n response: status={}, body={}", response.getStatusCode(), response.getBody());
 
             return ResponseEntity.ok(Map.of("message", "Training initiated", "status", session.getStatus()));
         } catch (Exception e) {
+            log.error("Failed to call n8n trainer webhook: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", "Failed to contact n8n: " + e.getMessage()));
         }
