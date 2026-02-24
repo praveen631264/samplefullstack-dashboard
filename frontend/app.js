@@ -356,7 +356,7 @@ function renderWorkflowList() {
   const sortedWF = performSort([...allWorkflows], workflowSort.field, workflowSort.dir);
 
   list.innerHTML = sortedWF.map(wf => `
-    <div class="wf-card" onclick="viewWorkflowEvent('${wf.eventId || ''}', '${wf.workflowId}')" data-testid="card-workflow-${wf.workflowId.substring(0,8)}">
+    <div class="wf-card" onclick="viewWorkflowEvent('${wf.eventId || ''}', '${wf.workflowId}')" data-testid="card-workflow-${wf.workflowId.substring(0, 8)}">
       <div class="wf-card-top">
         <div class="wf-card-info">
           <div class="wf-id">${wf.workflowId.substring(0, 12)}...</div>
@@ -549,7 +549,7 @@ function applyBpmnStyling() {
   const elementRegistry = bpmnViewer.get('elementRegistry');
   const canvas = bpmnViewer.get('canvas');
 
-  elementRegistry.forEach(function(element) {
+  elementRegistry.forEach(function (element) {
     const bo = element.businessObject;
     if (!bo) return;
 
@@ -665,12 +665,12 @@ function generateSessionId() {
   return `TRN-${dd}${mm}${yyyy}-${rand}`;
 }
 
-let trainState = { 
+let trainState = {
   sessionId: generateSessionId(),
-  step: 1, 
-  makerFinalized: false, 
-  checkerFinalized: false, 
-  compareFinalized: false 
+  step: 1,
+  makerFinalized: false,
+  checkerFinalized: false,
+  compareFinalized: false
 };
 
 (function initTrainSession() {
@@ -711,7 +711,7 @@ async function checkTrainResults(type) {
     await submitTrainerViaBrowserForm(sessionId, type, prompt, file);
 
     showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} check initiated. Waiting for AI...`, 'info');
-    
+
     pollTrainingResults(sessionId, type);
 
   } catch (err) {
@@ -722,67 +722,41 @@ async function checkTrainResults(type) {
 }
 
 function submitTrainerViaBrowserForm(sessionId, type, prompt, file) {
-  return new Promise((resolve) => {
-    const iframeName = 'trainer_frame_' + Date.now();
-    const iframe = document.createElement('iframe');
-    iframe.name = iframeName;
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
+  return new Promise(async (resolve, reject) => {
+    try {
+      const formData = new FormData();
+      formData.append('sessionId', sessionId);
+      formData.append('type', type);
+      formData.append('prompt', prompt);
+      if (file) {
+        formData.append('file', file);
+      }
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = N8N_TRAINER_WEBHOOK_URL;
-    form.enctype = 'multipart/form-data';
-    form.target = iframeName;
-    form.style.display = 'none';
+      const res = await fetch(`${API_BASE}/api/training/check`, {
+        method: 'POST',
+        body: formData
+      });
 
-    if (file) {
-      const fileInput = document.createElement('input');
-      fileInput.type = 'file';
-      fileInput.name = 'file';
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      fileInput.files = dt.files;
-      form.appendChild(fileInput);
-    }
-
-    const addHidden = (name, value) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = name;
-      input.value = value;
-      form.appendChild(input);
-    };
-    addHidden('sessionId', sessionId);
-    addHidden('type', type);
-    addHidden('prompt', prompt);
-    addHidden('baseUrl', CALLBACK_BASE_URL);
-    addHidden('callbackUrl', `${CALLBACK_BASE_URL}/api/training/callback`);
-
-    document.body.appendChild(form);
-
-    iframe.onload = () => {
-      setTimeout(() => {
-        try { document.body.removeChild(form); } catch (e) { }
-        try { document.body.removeChild(iframe); } catch (e) { }
-      }, 2000);
+      if (!res.ok) {
+        throw new Error(`Server returned ${res.status}`);
+      }
       resolve(true);
-    };
-
-    form.submit();
-    setTimeout(() => { resolve(true); }, 15000);
+    } catch (err) {
+      console.error('Failed to submit training check:', err);
+      reject(err);
+    }
   });
 }
 
 function pollTrainingResults(sessionId, type) {
   const resultsContent = document.getElementById(`results-${type}-content`);
   const finalizeBtn = document.getElementById(`btn-finalize-${type}`);
-  
+
   const pollInterval = setInterval(async () => {
     try {
       const res = await fetch(`${API_BASE}/api/training/session/${sessionId}`);
       const session = await res.json();
-      
+
       let result = null;
       if (type === 'maker') result = session.makerResult;
       else if (type === 'checker') result = session.checkerResult;
@@ -798,7 +772,7 @@ function pollTrainingResults(sessionId, type) {
       console.error('Polling error:', err);
     }
   }, 3000);
-  
+
   // Timeout after 60 seconds
   setTimeout(() => {
     clearInterval(pollInterval);
