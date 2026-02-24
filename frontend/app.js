@@ -312,7 +312,7 @@ function renderSubmittedCard(wf) {
   card.innerHTML = `
     <div class="card-header">
       <i data-lucide="activity" class="header-icon"></i>
-      <h2>Submitted Event Status</h2>
+      <h2>AI Agent Processing Status</h2>
     </div>
     <div class="submitted-card-body">
       <div class="submitted-info-row">
