@@ -43,6 +43,10 @@ jobs:
         script: |
           cd /home/ubuntu/app
           
+          # Install missing dependencies for diagnostics
+          sudo apt-get update -y
+          sudo apt-get install -y unzip psmisc
+
           # Rename JAR for consistency
           mv target/*.jar ./app.jar
           
@@ -55,6 +59,7 @@ jobs:
           
           # Eradicate zombie processes on port 5000 and port 80
           sudo fuser -k 5000/tcp 2>/dev/null || true
+          sudo fuser -k 80/tcp 2>/dev/null || true
           sudo systemctl stop apache2 2>/dev/null || true
           sudo systemctl disable apache2 2>/dev/null || true
 
@@ -74,10 +79,11 @@ jobs:
                pm2 start /usr/bin/java --name test-orchestrator -- -jar /home/ubuntu/app/app.jar
 
           # Diagnostics: Monitoring Startup
-          sleep 20
+          # Note: Build #28 took 156s to boot. We'll wait and then check logs.
+          sleep 60
           sudo pm2 status
           sudo pm2 logs test-orchestrator --lines 100 --no-daemon &
-          sleep 10
+          sleep 30
           sudo pkill -f "pm2 logs" || true
           
           sudo pm2 save
