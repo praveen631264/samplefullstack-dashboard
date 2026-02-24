@@ -78,7 +78,7 @@
         {
             "parameters": {
                 "promptType": "define",
-                "text": "={{ .item.json.body?.makerPrompt }}\n\nData from Maker File:\n{{ JSON.stringify(.item.json) }}",
+                "text": "={{ Receive Combined Inputs.item.json.body?.makerPrompt }}\n\nData from Maker File:\n{{ JSON.stringify() }}",
                 "hasOutputParser": true,
                 "options": {}
             },
@@ -94,7 +94,7 @@
         {
             "parameters": {
                 "promptType": "define",
-                "text": "={{ .item.json.body?.checkerPrompt }}\n\nData from Checker File:\n{{ .item.json.text }}",
+                "text": "={{ Receive Combined Inputs.item.json.body?.checkerPrompt }}\n\nData from Checker File:\n{{ JSON.stringify() }}",
                 "hasOutputParser": true,
                 "options": {}
             },
