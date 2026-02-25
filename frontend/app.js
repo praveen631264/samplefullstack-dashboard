@@ -597,7 +597,7 @@ async function viewEventDetail(eventId) {
           <div class="detail-item"><div class="detail-label">Created</div><div class="detail-value">${formatDetailedTime(ev.createdAt)}</div></div>
         </div>
         ${(() => {
-          const isVerified = ev.status === 'COMPLETED' || ev.status === 'COMPLETED_WITH_FAILURE';
+          const isVerified = ev.status === 'COMPLETED' || ev.status === 'COMPLETED_WITH_FAILURE' || ev.status === 'Verified' || (ev.status || '').toLowerCase() === 'verified';
           const remarksText = isVerified
             ? 'Maker (Source 1) data matches the Checker (Source 2) data'
             : ev.remarks;
