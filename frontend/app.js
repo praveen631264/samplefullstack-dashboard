@@ -599,7 +599,7 @@ async function viewEventDetail(eventId) {
         ${(() => {
           const isVerified = ev.status === 'COMPLETED' || ev.status === 'COMPLETED_WITH_FAILURE' || ev.status === 'Verified' || (ev.status || '').toLowerCase() === 'verified';
           const remarksText = isVerified
-            ? 'Maker (Source 1) data matches the Checker (Source 2) data'
+            ? 'The Maker (Source 1) data matches the Checker (Source 2) data.'
             : ev.remarks;
           return remarksText ? `<div class="modal-remarks"><div class="detail-label">Remarks</div><div class="modal-remarks-text">${remarksText}</div></div>` : '';
         })()}
