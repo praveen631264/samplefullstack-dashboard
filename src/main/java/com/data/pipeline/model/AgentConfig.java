@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Table(name = "agent_configs")
@@ -28,9 +29,23 @@ public class AgentConfig {
     @Column(name = "compare_prompt", columnDefinition = "TEXT")
     private String comparePrompt;
 
+    @Column(name = "maker_file_name")
+    private String makerFileName;
+
+    @Lob
+    @Column(name = "maker_file_data")
+    private byte[] makerFileData;
+
+    @Column(name = "checker_file_name")
+    private String checkerFileName;
+
+    @Lob
+    @Column(name = "checker_file_data")
+    private byte[] checkerFileData;
+
     @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt = LocalDateTime.now(ZoneId.of("America/New_York"));
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private LocalDateTime updatedAt = LocalDateTime.now(ZoneId.of("America/New_York"));
 }

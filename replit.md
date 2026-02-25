@@ -49,6 +49,11 @@ src/main/java/com/data/pipeline/
 src/main/resources/
   application.properties            - App configuration
   ca-event-processing.bpmn          - BPMN process definition
+
+db/
+  V1__schema.sql                    - DDL schema (H2)
+  V1__schema_postgresql.sql         - DDL schema (PostgreSQL production)
+  V2__seed_data.sql                 - DML seed data
 ```
 
 ## ID Formats

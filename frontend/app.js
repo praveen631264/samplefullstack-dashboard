@@ -25,6 +25,15 @@ function switchView(view) {
   lucide.createIcons();
 }
 
+function switchTrainSubTab(tab) {
+  document.querySelectorAll('.train-sub-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.train-subtab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.train-sub-tab[data-subtab="${tab}"]`).classList.add('active');
+  document.getElementById(`subtab-${tab}`).classList.add('active');
+  if (tab === 'available') loadSavedAgents();
+  lucide.createIcons();
+}
+
 function handleFileSelect(input, nameId) {
   const nameEl = document.getElementById(nameId);
   const zone = input.closest('.file-input-wrap');
@@ -68,7 +77,7 @@ async function loadAgentDropdown() {
     const select = document.getElementById('agent-select');
     if (!select) return;
     const currentVal = select.value;
-    select.innerHTML = '<option value="">Default (No Agent)</option>';
+    select.innerHTML = '<option value="">Default</option>';
     cachedAgents.forEach(a => {
       const opt = document.createElement('option');
       opt.value = a.id;
@@ -86,7 +95,6 @@ async function submitWorkflow(e) {
   const btn = document.getElementById('submit-btn');
   const source1Input = document.getElementById('source1');
   const source2Input = document.getElementById('source2');
-  const description = document.getElementById('description').value;
   const agentSelect = document.getElementById('agent-select');
   const selectedAgentId = agentSelect ? agentSelect.value : '';
 
@@ -103,8 +111,6 @@ async function submitWorkflow(e) {
     const createData = new FormData();
     if (source1Input.files[0]) createData.append('source1', source1Input.files[0]);
     if (source2Input.files[0]) createData.append('source2', source2Input.files[0]);
-    createData.append('description', description);
-
     const res = await fetch(`${API_BASE}/api/workflows`, { method: 'POST', body: createData });
     const workflow = await res.json();
     const workflowId = workflow.workflowId;
@@ -120,7 +126,7 @@ async function submitWorkflow(e) {
         await submitAgentCombinedViaForm(source1Input, source2Input, workflowId, agent);
       }
     } else {
-      await submitToN8nViaForm(source1Input, source2Input, workflowId, description);
+      await submitToN8nViaForm(source1Input, source2Input, workflowId);
     }
 
     try {
@@ -150,7 +156,7 @@ async function submitWorkflow(e) {
   }
 }
 
-function submitToN8nViaForm(source1Input, source2Input, workflowId, description) {
+function submitToN8nViaForm(source1Input, source2Input, workflowId) {
   return new Promise((resolve) => {
     const iframeName = 'n8n_frame_' + Date.now();
     const iframe = document.createElement('iframe');
@@ -193,7 +199,6 @@ function submitToN8nViaForm(source1Input, source2Input, workflowId, description)
       form.appendChild(input);
     };
     addHidden('workflowId', workflowId);
-    addHidden('description', description || '');
     addHidden('baseUrl', CALLBACK_BASE_URL);
     addHidden('callbackUrl', `${CALLBACK_BASE_URL}/api/workflows/${workflowId}/status`);
 
@@ -287,11 +292,11 @@ function renderSubmittedCard(wf) {
   const statusMap = {
     'STARTED': 'Started', 'PARSING': 'In Progress',
     'EVENT_CREATED': 'Event Created', 'VERIFYING': 'Verifying',
-    'COMPLETED': 'Completed', 'COMPLETED_WITH_FAILURE': 'Failed', 'FAILED': 'Failed'
+    'COMPLETED': 'Completed', 'COMPLETED_WITH_FAILURE': 'Completed', 'FAILED': 'Failed'
   };
   const statusLabel = statusMap[wf.status] || wf.status;
-  const isComplete = wf.status === 'COMPLETED';
-  const isFailed = wf.status === 'FAILED' || wf.status === 'COMPLETED_WITH_FAILURE';
+  const isComplete = wf.status === 'COMPLETED' || wf.status === 'COMPLETED_WITH_FAILURE';
+  const isFailed = wf.status === 'FAILED';
   const statusClass = isComplete ? 'status-completed' : isFailed ? 'status-failed' : 'status-progress';
 
   const caIdRow = wf.eventId ? `
@@ -307,16 +312,12 @@ function renderSubmittedCard(wf) {
   card.innerHTML = `
     <div class="card-header">
       <i data-lucide="activity" class="header-icon"></i>
-      <h2>Submitted Event Status</h2>
+      <h2>AI Agent Processing Status</h2>
     </div>
     <div class="submitted-card-body">
       <div class="submitted-info-row">
         <span class="submitted-label">Workflow ID</span>
         <span class="submitted-value" data-testid="text-submitted-id">${wf.workflowId}</span>
-      </div>
-      <div class="submitted-info-row">
-        <span class="submitted-label">Description</span>
-        <span class="submitted-value" data-testid="text-submitted-desc">${wf.description || 'No description'}</span>
       </div>
       <div class="submitted-info-row">
         <span class="submitted-label">Source 1</span>
@@ -387,7 +388,7 @@ async function refreshWorkflows() {
 }
 
 const WORKFLOW_STEPS = [
-  { key: 'STARTED', label: 'Agent Started', icon: 'play' },
+  { key: 'STARTED', label: 'AI Agent Started', icon: 'play' },
   { key: 'PARSING', label: 'Creation in Progress', icon: 'cog' },
   { key: 'VERIFYING', label: 'Verification in Progress', icon: 'shield-check' },
   { key: 'COMPLETED', label: 'Completed', icon: 'check-circle-2' }
@@ -397,15 +398,15 @@ function getStepIndex(status) {
   if (status === 'STARTED') return 0;
   if (status === 'PARSING' || status === 'EVENT_CREATED') return 1;
   if (status === 'VERIFYING') return 2;
-  if (status === 'COMPLETED') return 3;
-  if (status === 'COMPLETED_WITH_FAILURE' || status === 'FAILED') return -1;
+  if (status === 'COMPLETED' || status === 'COMPLETED_WITH_FAILURE') return 3;
+  if (status === 'FAILED') return -1;
   return 0;
 }
 
 function buildProgressBar(wf) {
   const stepIdx = getStepIndex(wf.status);
-  const isFailed = wf.status === 'FAILED' || wf.status === 'COMPLETED_WITH_FAILURE';
-  const isComplete = wf.status === 'COMPLETED';
+  const isFailed = wf.status === 'FAILED';
+  const isComplete = wf.status === 'COMPLETED' || wf.status === 'COMPLETED_WITH_FAILURE';
   const fillPct = isComplete ? 100 : isFailed ? 0 : (stepIdx / (WORKFLOW_STEPS.length - 1)) * 100;
 
   const createdTime = formatShortTime(wf.createdAt);
@@ -461,7 +462,6 @@ function renderWorkflowList() {
       <div class="wf-card-top">
         <div class="wf-card-info">
           <div class="wf-id">${wf.workflowId.substring(0, 12)}...</div>
-          <div class="wf-desc">${wf.description || 'No description'}</div>
           <div class="wf-files">
             <i data-lucide="file-spreadsheet" class="wf-files-svg"></i> ${wf.source1FileName || 'N/A'}
             <span style="color:var(--text-muted);margin:0 4px">|</span>
@@ -503,7 +503,22 @@ function renderEventsTable() {
     return;
   }
 
-  const sortedEvents = performSort([...allEvents], eventSort.field, eventSort.dir);
+  let eventsToRender = allEvents;
+  if (currentSearchQuery) {
+    const q = currentSearchQuery.toLowerCase();
+    eventsToRender = allEvents.filter(ev =>
+      (ev.cusip?.toLowerCase().includes(q)) ||
+      (ev.eventId?.toLowerCase().includes(q)) ||
+      (ev.eventType?.toLowerCase().includes(q))
+    );
+  }
+
+  if (!eventsToRender.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted)">No events found</td></tr>';
+    return;
+  }
+
+  const sortedEvents = performSort([...eventsToRender], eventSort.field, eventSort.dir);
 
   tbody.innerHTML = sortedEvents.map(ev => `
     <tr>
@@ -537,17 +552,11 @@ function filterEvents(status, btn) {
   loadEvents();
 }
 
+let currentSearchQuery = '';
+
 function searchEvents(query) {
-  if (!query) { renderEventsTable(); return; }
-  const filtered = allEvents.filter(ev =>
-    (ev.cusip?.toLowerCase().includes(query.toLowerCase())) ||
-    (ev.eventId?.toLowerCase().includes(query.toLowerCase())) ||
-    (ev.eventType?.toLowerCase().includes(query.toLowerCase()))
-  );
-  const temp = allEvents;
-  allEvents = filtered;
+  currentSearchQuery = query || '';
   renderEventsTable();
-  allEvents = temp;
 }
 
 async function viewEventDetail(eventId) {
@@ -555,27 +564,55 @@ async function viewEventDetail(eventId) {
     const res = await fetch(`${API_BASE}/api/events/${eventId}`);
     const ev = await res.json();
 
+    let wf = null;
+    if (ev.workflowId) {
+      try {
+        const wfList = await fetch(`${API_BASE}/api/workflows`).then(r => r.json());
+        wf = wfList.find(w => w.workflowId === ev.workflowId);
+      } catch (e) {}
+    }
+
+    const fileLinksHtml = wf ? `
+      <div class="modal-section">
+        <div class="modal-section-title"><i data-lucide="paperclip" class="section-title-icon"></i> Uploaded Documents</div>
+        <div class="modal-file-links">
+          ${wf.source1FileName && wf.source1FileName !== 'N/A' ? `<a href="${API_BASE}/api/workflows/${wf.workflowId}/file/source1" class="modal-file-link" download data-testid="link-download-source1-${wf.workflowId}"><i data-lucide="file-spreadsheet"></i><div class="modal-file-info"><span class="modal-file-name">${wf.source1FileName}</span><span class="modal-file-type">Source 1 (Maker)</span></div><i data-lucide="download" class="modal-file-download"></i></a>` : ''}
+          ${wf.source2FileName && wf.source2FileName !== 'N/A' ? `<a href="${API_BASE}/api/workflows/${wf.workflowId}/file/source2" class="modal-file-link" download data-testid="link-download-source2-${wf.workflowId}"><i data-lucide="file-text"></i><div class="modal-file-info"><span class="modal-file-name">${wf.source2FileName}</span><span class="modal-file-type">Source 2 (Checker)</span></div><i data-lucide="download" class="modal-file-download"></i></a>` : ''}
+        </div>
+      </div>
+    ` : '';
+
     document.getElementById('modal-title').textContent = `Event: ${ev.eventId}`;
     document.getElementById('modal-body').innerHTML = `
-      <div class="detail-grid">
-        <div class="detail-item"><div class="detail-label">Event ID</div><div class="detail-value">${ev.eventId}</div></div>
-        <div class="detail-item"><div class="detail-label">CUSIP</div><div class="detail-value">${ev.cusip}</div></div>
-        <div class="detail-item"><div class="detail-label">Event Type</div><div class="detail-value"><span class="type-badge type-${getTypeClass(ev.eventType)}">${ev.eventType}</span></div></div>
-        <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value"><span class="status-badge status-${ev.status?.replace(/\s/g, '-')}">${ev.status}</span></div></div>
-        <div class="detail-item"><div class="detail-label">Principal Rate</div><div class="detail-value">${ev.principalRate?.toFixed(2) || '-'}</div></div>
-        <div class="detail-item"><div class="detail-label">Premium Rate</div><div class="detail-value">${ev.premiumRate?.toFixed(2) || '-'}</div></div>
-        <div class="detail-item"><div class="detail-label">Security Called Amount</div><div class="detail-value">${ev.securityCalledAmount?.toLocaleString() || '-'}</div></div>
-        <div class="detail-item"><div class="detail-label">Payable Date</div><div class="detail-value">${ev.payableDate || '-'}</div></div>
-        <div class="detail-item full-width"><div class="detail-label">Remarks</div><div class="detail-value">${ev.remarks || 'None'}</div></div>
+      <div class="modal-section">
+        <div class="modal-section-title"><i data-lucide="info" class="section-title-icon"></i> Event Details</div>
+        <div class="detail-grid">
+          <div class="detail-item"><div class="detail-label">Event ID</div><div class="detail-value">${ev.eventId}</div></div>
+          <div class="detail-item"><div class="detail-label">CUSIP</div><div class="detail-value"><strong>${ev.cusip}</strong></div></div>
+          <div class="detail-item"><div class="detail-label">Event Type</div><div class="detail-value"><span class="type-badge type-${getTypeClass(ev.eventType)}">${ev.eventType}</span></div></div>
+          <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value"><span class="status-badge status-${ev.status?.replace(/\s/g, '-')}">${ev.status}</span></div></div>
+          <div class="detail-item"><div class="detail-label">Principal Rate</div><div class="detail-value">${ev.principalRate?.toFixed(2) || '-'}</div></div>
+          <div class="detail-item"><div class="detail-label">Premium Rate</div><div class="detail-value">${ev.premiumRate?.toFixed(2) || '-'}</div></div>
+          <div class="detail-item"><div class="detail-label">Called Amount</div><div class="detail-value">${ev.securityCalledAmount?.toLocaleString() || '-'}</div></div>
+          <div class="detail-item"><div class="detail-label">Payable Date</div><div class="detail-value">${ev.payableDate || '-'}</div></div>
+          ${ev.workflowId ? `<div class="detail-item"><div class="detail-label">Workflow ID</div><div class="detail-value"><code>${ev.workflowId}</code></div></div>` : ''}
+          <div class="detail-item"><div class="detail-label">Created</div><div class="detail-value">${formatDetailedTime(ev.createdAt)}</div></div>
+        </div>
+        ${ev.remarks ? `<div class="modal-remarks"><div class="detail-label">Remarks</div><div class="modal-remarks-text">${ev.remarks}</div></div>` : ''}
       </div>
+      ${fileLinksHtml}
       ${ev.source1Data || ev.source2Data ? `
-        <div class="source-comparison">
-          <div class="source-box"><h4>Source 1 (Maker)</h4><pre>${formatJSON(ev.source1Data)}</pre></div>
-          <div class="source-box"><h4>Source 2 (Checker)</h4><pre>${formatJSON(ev.source2Data)}</pre></div>
+        <div class="modal-section">
+          <div class="modal-section-title"><i data-lucide="git-compare" class="section-title-icon"></i> AI Extraction Results</div>
+          <div class="source-comparison">
+            <div class="source-box"><h4><i data-lucide="file-spreadsheet" class="source-icon"></i> Source 1 (Maker)</h4><pre>${formatJSON(ev.source1Data)}</pre></div>
+            <div class="source-box"><h4><i data-lucide="file-text" class="source-icon"></i> Source 2 (Checker)</h4><pre>${formatJSON(ev.source2Data)}</pre></div>
+          </div>
         </div>
       ` : ''}
     `;
     document.getElementById('event-modal').classList.add('active');
+    lucide.createIcons();
   } catch (err) {
     showToast('Error loading event details', 'error');
   }
@@ -590,7 +627,13 @@ function viewWorkflowEvent(eventId, workflowId) {
 
 function navigateToEvent(eventId) {
   switchView('events');
-  setTimeout(() => viewEventDetail(eventId), 300);
+  setTimeout(() => {
+    const searchInput = document.getElementById('event-search');
+    if (searchInput) {
+      searchInput.value = eventId;
+      searchEvents(eventId);
+    }
+  }, 300);
 }
 
 function closeModal() {
@@ -704,7 +747,7 @@ function formatStatus(status) {
   const labels = {
     'STARTED': 'Started', 'PARSING': 'In Progress',
     'EVENT_CREATED': 'Event Created', 'VERIFYING': 'Verifying',
-    'COMPLETED': 'Completed', 'COMPLETED_WITH_FAILURE': 'Failed', 'FAILED': 'Failed'
+    'COMPLETED': 'Completed', 'COMPLETED_WITH_FAILURE': 'Completed', 'FAILED': 'Failed'
   };
   return labels[status] || status;
 }
@@ -740,13 +783,13 @@ function formatBytes(bytes) {
 
 function formatDetailedTime(dateStr) {
   if (!dateStr) return '';
-  return new Date(dateStr).toLocaleString();
+  return new Date(dateStr).toLocaleString('en-US', { timeZone: 'America/New_York' });
 }
 
 function formatShortTime(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' });
 }
 
 function formatJSON(data) {
@@ -759,9 +802,8 @@ function formatJSON(data) {
 
 function generateSessionId() {
   const now = new Date();
-  const dd = String(now.getDate()).padStart(2, '0');
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const yyyy = now.getFullYear();
+  const estStr = now.toLocaleDateString('en-US', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const [mm, dd, yyyy] = estStr.split('/');
   const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
   return `TRN-${dd}${mm}${yyyy}-${rand}`;
 }
@@ -771,7 +813,9 @@ let trainState = {
   step: 1,
   makerFinalized: false,
   checkerFinalized: false,
-  compareFinalized: false
+  compareFinalized: false,
+  makerFile: null,
+  checkerFile: null
 };
 
 (function initTrainSession() {
@@ -794,10 +838,12 @@ async function checkTrainResults(type) {
     const fileInput = document.getElementById('train-maker-file');
     if (!fileInput.files.length) { showToast('Please upload a Maker file', 'warning'); return; }
     file = fileInput.files[0];
+    trainState.makerFile = file;
   } else if (type === 'checker') {
     const fileInput = document.getElementById('train-checker-file');
     if (!fileInput.files.length) { showToast('Please upload a Checker file', 'warning'); return; }
     file = fileInput.files[0];
+    trainState.checkerFile = file;
   }
 
   const resultsPanel = document.getElementById(`results-${type}`);
@@ -986,18 +1032,19 @@ async function saveAgent() {
   const agentName = document.getElementById('train-agent-name').value.trim();
   if (!agentName) { showToast('Please enter an agent name', 'warning'); return; }
 
-  const payload = {
-    agentName: agentName,
-    makerPrompt: document.getElementById('train-maker-prompt').value.trim(),
-    checkerPrompt: document.getElementById('train-checker-prompt').value.trim(),
-    comparePrompt: document.getElementById('train-compare-prompt').value.trim()
-  };
+  const formData = new FormData();
+  formData.append('agentName', agentName);
+  formData.append('makerPrompt', document.getElementById('train-maker-prompt').value.trim());
+  formData.append('checkerPrompt', document.getElementById('train-checker-prompt').value.trim());
+  formData.append('comparePrompt', document.getElementById('train-compare-prompt').value.trim());
+
+  if (trainState.makerFile) formData.append('makerFile', trainState.makerFile);
+  if (trainState.checkerFile) formData.append('checkerFile', trainState.checkerFile);
 
   try {
     const res = await fetch(`${API_BASE}/api/agents`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: formData
     });
     const data = await res.json();
     if (!res.ok) {
@@ -1005,8 +1052,8 @@ async function saveAgent() {
       return;
     }
     showToast(`Agent "${agentName}" saved successfully`, 'success');
-    loadSavedAgents();
     resetTrainForm();
+    switchTrainSubTab('available');
   } catch (err) {
     console.error('Save agent error:', err);
     showToast('Error saving agent', 'error');
@@ -1014,7 +1061,7 @@ async function saveAgent() {
 }
 
 function resetTrainForm() {
-  trainState = { step: 1, makerFinalized: false, checkerFinalized: false, compareFinalized: false };
+  trainState = { step: 1, makerFinalized: false, checkerFinalized: false, compareFinalized: false, makerFile: null, checkerFile: null };
 
   ['train-maker-prompt', 'train-checker-prompt', 'train-compare-prompt'].forEach(id => {
     const el = document.getElementById(id);
@@ -1065,11 +1112,10 @@ async function loadSavedAgents() {
     const list = document.getElementById('saved-agents-list');
 
     if (agents.length === 0) {
-      section.style.display = 'none';
+      list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted)">No AI agents created yet. Go to the <strong>Create AI Agents</strong> tab to build one.</div>';
+      lucide.createIcons();
       return;
     }
-
-    section.style.display = 'block';
     list.innerHTML = agents.map(a => `
       <div class="saved-agent-accordion" data-testid="agent-item-${a.id}">
         <div class="saved-agent-header" onclick="toggleAgentAccordion(this)">
@@ -1088,6 +1134,13 @@ async function loadSavedAgents() {
           </div>
         </div>
         <div class="saved-agent-body">
+          <div class="agent-documents-section">
+            <div class="agent-documents-title"><i data-lucide="paperclip" class="prompt-label-icon"></i> Training Documents</div>
+            <div class="agent-documents-list">
+              ${a.makerFileName ? `<a href="${API_BASE}/api/agents/${a.id}/file/maker" class="agent-doc-link" download data-testid="link-download-maker-${a.id}"><i data-lucide="file-spreadsheet"></i> ${a.makerFileName}</a>` : '<span class="agent-doc-none">No maker file</span>'}
+              ${a.checkerFileName ? `<a href="${API_BASE}/api/agents/${a.id}/file/checker" class="agent-doc-link" download data-testid="link-download-checker-${a.id}"><i data-lucide="file-text"></i> ${a.checkerFileName}</a>` : '<span class="agent-doc-none">No checker file</span>'}
+            </div>
+          </div>
           <div class="prompt-accordion">
             <div class="prompt-accordion-header" onclick="this.parentElement.classList.toggle('open')">
               <div class="prompt-accordion-title"><i data-lucide="file-text" class="prompt-label-icon"></i> Maker Prompt</div>

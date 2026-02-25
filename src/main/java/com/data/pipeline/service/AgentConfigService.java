@@ -22,14 +22,18 @@ public class AgentConfigService {
         return repository.findByAgentName(agentName);
     }
 
+    public Optional<AgentConfig> getById(Long id) {
+        return repository.findById(id);
+    }
+
     public boolean exists(String agentName) {
         return repository.existsByAgentName(agentName);
     }
 
     public AgentConfig save(AgentConfig config) {
-        config.setUpdatedAt(LocalDateTime.now());
+        config.setUpdatedAt(LocalDateTime.now(java.time.ZoneId.of("America/New_York")));
         if (config.getCreatedAt() == null) {
-            config.setCreatedAt(LocalDateTime.now());
+            config.setCreatedAt(LocalDateTime.now(java.time.ZoneId.of("America/New_York")));
         }
         return repository.save(config);
     }
