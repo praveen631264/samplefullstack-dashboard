@@ -20,5 +20,5 @@ public class AgentTrainingSession {
     private String compareResult;
 
     private String status; // e.g., "INITIAL", "MAKER_PROCESSING", "MAKER_DONE", "SAVED"
-    private LocalDateTime updatedAt = LocalDateTime.now(ZoneId.of("America/New_York"));
+    private LocalDateTime updatedAt = LocalDateTime.now(ZoneId.of("UTC"));
 }

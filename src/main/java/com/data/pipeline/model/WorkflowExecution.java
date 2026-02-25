@@ -36,6 +36,6 @@ public class WorkflowExecution {
     private String cusip;
     private String eventType;
 
-    private LocalDateTime createdAt = LocalDateTime.now(ZoneId.of("America/New_York"));
-    private LocalDateTime updatedAt = LocalDateTime.now(ZoneId.of("America/New_York"));
+    private LocalDateTime createdAt = LocalDateTime.now(ZoneId.of("UTC"));
+    private LocalDateTime updatedAt = LocalDateTime.now(ZoneId.of("UTC"));
 }

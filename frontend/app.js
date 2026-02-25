@@ -686,15 +686,22 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
+function parseUtcDate(dateStr) {
+  if (!dateStr) return null;
+  if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !/[+-]\d\d:\d\d$/.test(dateStr)) {
+    dateStr = dateStr + 'Z';
+  }
+  return new Date(dateStr);
+}
+
 function formatDetailedTime(dateStr) {
   if (!dateStr) return '';
-  return new Date(dateStr).toLocaleString('en-US', { timeZone: 'America/New_York' });
+  return parseUtcDate(dateStr).toLocaleString('en-US', { timeZone: 'America/New_York' });
 }
 
 function formatShortTime(dateStr) {
   if (!dateStr) return '';
-  const d = new Date(dateStr);
-  return d.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' });
+  return parseUtcDate(dateStr).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' });
 }
 
 function formatJSON(data) {

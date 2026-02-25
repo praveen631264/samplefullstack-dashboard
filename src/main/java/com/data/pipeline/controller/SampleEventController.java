@@ -40,7 +40,7 @@ public class SampleEventController {
             event.setEventId(eventService.generateCaId());
         }
         if (event.getCreatedAt() == null) {
-            event.setCreatedAt(java.time.LocalDateTime.now(java.time.ZoneId.of("America/New_York")));
+            event.setCreatedAt(java.time.LocalDateTime.now(java.time.ZoneId.of("UTC")));
         }
         SampleEvent saved = eventService.saveEvent(event);
         if (saved.getWorkflowId() != null && !saved.getWorkflowId().isEmpty()) {
