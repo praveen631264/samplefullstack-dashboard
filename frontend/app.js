@@ -21,7 +21,6 @@ function switchView(view) {
   }
   if (view === 'events') loadEvents();
   if (view === 'train') loadSavedAgents();
-  if (view === 'bpmn') renderBPMN();
   lucide.createIcons();
 }
 
@@ -65,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadAgentDropdown();
   startPolling();
-  renderBPMN();
 });
 
 let cachedAgents = [];
@@ -641,99 +639,6 @@ function closeModal() {
 }
 
 
-let bpmnViewer = null;
-
-async function renderBPMN() {
-  const canvas = document.getElementById('bpmn-canvas');
-  const processName = document.getElementById('bpmn-process-name');
-
-  if (bpmnViewer) {
-    bpmnViewer.destroy();
-    bpmnViewer = null;
-  }
-
-  canvas.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted)"><i data-lucide="loader" class="spin" style="margin-right:8px"></i> Loading BPMN diagram...</div>';
-  lucide.createIcons();
-
-  try {
-    const res = await fetch('/api/bpmn/ca-event-processing');
-    if (!res.ok) throw new Error('Failed to load BPMN');
-    const xml = await res.text();
-
-    canvas.innerHTML = '';
-    bpmnViewer = new BpmnJS({ container: canvas });
-
-    const result = await bpmnViewer.importXML(xml);
-
-    const canvasModule = bpmnViewer.get('canvas');
-    canvasModule.zoom('fit-viewport');
-
-    const defs = bpmnViewer.getDefinitions();
-    if (defs && defs.rootElements) {
-      const proc = defs.rootElements.find(e => e.$type === 'bpmn:Process');
-      if (proc && proc.name) {
-        processName.textContent = proc.name;
-      }
-    }
-
-    applyBpmnStyling();
-
-  } catch (err) {
-    canvas.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);flex-direction:column;gap:8px">
-      <i data-lucide="alert-triangle" style="width:32px;height:32px;color:#f59e0b"></i>
-      <span>Failed to load BPMN diagram</span>
-      <span style="font-size:11px">${err.message}</span>
-    </div>`;
-    lucide.createIcons();
-  }
-}
-
-function applyBpmnStyling() {
-  if (!bpmnViewer) return;
-  const elementRegistry = bpmnViewer.get('elementRegistry');
-  const canvas = bpmnViewer.get('canvas');
-
-  elementRegistry.forEach(function (element) {
-    const bo = element.businessObject;
-    if (!bo) return;
-
-    if (bo.$type === 'bpmn:ServiceTask') {
-      canvas.addMarker(element.id, 'bpmn-service-task');
-    } else if (bo.$type === 'bpmn:UserTask') {
-      canvas.addMarker(element.id, 'bpmn-user-task');
-    } else if (bo.$type === 'bpmn:ParallelGateway') {
-      canvas.addMarker(element.id, 'bpmn-parallel-gw');
-    } else if (bo.$type === 'bpmn:ExclusiveGateway') {
-      canvas.addMarker(element.id, 'bpmn-exclusive-gw');
-    } else if (bo.$type === 'bpmn:StartEvent') {
-      canvas.addMarker(element.id, 'bpmn-start-event');
-    } else if (bo.$type === 'bpmn:EndEvent') {
-      canvas.addMarker(element.id, 'bpmn-end-event');
-    }
-  });
-}
-
-function bpmnZoomIn() {
-  if (!bpmnViewer) return;
-  const c = bpmnViewer.get('canvas');
-  c.zoom(c.zoom() * 1.2);
-}
-
-function bpmnZoomOut() {
-  if (!bpmnViewer) return;
-  const c = bpmnViewer.get('canvas');
-  c.zoom(c.zoom() / 1.2);
-}
-
-function bpmnFitView() {
-  if (!bpmnViewer) return;
-  bpmnViewer.get('canvas').zoom('fit-viewport');
-}
-
-function bpmnResetZoom() {
-  if (!bpmnViewer) return;
-  bpmnViewer.get('canvas').zoom(1.0);
-}
 
 function startPolling() {
   if (pollingInterval) clearInterval(pollingInterval);

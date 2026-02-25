@@ -456,48 +456,6 @@ body {
 .btn-delete-agent:hover { background: #fee2e2; }
 .btn-delete-agent:hover svg { color: #dc2626; }
 
-.bpmn-container { padding: 20px; }
-.bpmn-toolbar {
-  display: flex; gap: 8px; align-items: center; margin-bottom: 12px;
-  padding-bottom: 12px; border-bottom: 1px solid var(--border-color);
-}
-.bpmn-toolbar .btn-sm {
-  padding: 4px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px;
-  background: var(--bg-body); border: 1px solid var(--border-color);
-  border-radius: 6px; cursor: pointer; color: var(--text-secondary);
-  transition: all 0.15s ease;
-}
-.bpmn-toolbar .btn-sm:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
-.bpmn-toolbar .btn-sm i { width: 14px; height: 14px; }
-.bpmn-process-name {
-  margin-left: auto; font-size: 13px; font-weight: 600;
-  color: var(--accent); letter-spacing: -0.3px;
-}
-.bpmn-canvas {
-  height: 520px;
-  background: var(--bg-body);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-color);
-  position: relative;
-  overflow: hidden;
-}
-.bpmn-legend {
-  display: flex; gap: 20px; margin-top: 14px; flex-wrap: wrap;
-  padding-top: 14px; border-top: 1px solid var(--border-color);
-}
-.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
-.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
-
-.bpmn-service-task .djs-visual rect { stroke: #4296f4 !important; stroke-width: 2px !important; fill: #e3f2fd !important; }
-.bpmn-user-task .djs-visual rect { stroke: #f9a825 !important; stroke-width: 2px !important; fill: #fff8e1 !important; }
-.bpmn-parallel-gw .djs-visual polygon { stroke: #7b1fa2 !important; stroke-width: 2px !important; fill: #f3e5f5 !important; }
-.bpmn-exclusive-gw .djs-visual polygon { stroke: #7b1fa2 !important; stroke-width: 2px !important; fill: #ede7f6 !important; }
-.bpmn-start-event .djs-visual circle { stroke: #22b14c !important; stroke-width: 3px !important; fill: #e8f5e9 !important; }
-.bpmn-end-event .djs-visual circle { stroke: #ff3d00 !important; stroke-width: 3px !important; fill: #fbe9e7 !important; }
-
-.djs-element .djs-visual text { font-family: 'Inter', sans-serif !important; font-size: 11px !important; }
-.djs-connection .djs-visual path { stroke: #78909c !important; }
-.djs-connection .djs-visual path[marker-end] { marker-end: url(#sequenceflow-end) !important; }
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .spin { animation: spin 1.5s linear infinite; }
