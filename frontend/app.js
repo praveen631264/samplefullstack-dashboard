@@ -596,7 +596,13 @@ async function viewEventDetail(eventId) {
           ${ev.workflowId ? `<div class="detail-item"><div class="detail-label">Workflow ID</div><div class="detail-value"><code>${ev.workflowId}</code></div></div>` : ''}
           <div class="detail-item"><div class="detail-label">Created</div><div class="detail-value">${formatDetailedTime(ev.createdAt)}</div></div>
         </div>
-        ${ev.remarks ? `<div class="modal-remarks"><div class="detail-label">Remarks</div><div class="modal-remarks-text">${ev.remarks}</div></div>` : ''}
+        ${(() => {
+          const isVerified = ev.status === 'COMPLETED' || ev.status === 'COMPLETED_WITH_FAILURE';
+          const remarksText = isVerified
+            ? 'Maker (Source 1) data matches the Checker (Source 2) data'
+            : ev.remarks;
+          return remarksText ? `<div class="modal-remarks"><div class="detail-label">Remarks</div><div class="modal-remarks-text">${remarksText}</div></div>` : '';
+        })()}
       </div>
       ${fileLinksHtml}
       ${ev.source1Data || ev.source2Data ? `
