@@ -26,7 +26,7 @@ public class AgentTrainingService {
         if (session != null) {
             session.setMakerResult(result);
             session.setStatus("MAKER_DONE");
-            session.setUpdatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
+            session.setUpdatedAt(LocalDateTime.now(ZoneId.of("UTC")));
         }
     }
 
@@ -35,7 +35,7 @@ public class AgentTrainingService {
         if (session != null) {
             session.setCheckerResult(result);
             session.setStatus("CHECKER_DONE");
-            session.setUpdatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
+            session.setUpdatedAt(LocalDateTime.now(ZoneId.of("UTC")));
         }
     }
 
@@ -44,7 +44,7 @@ public class AgentTrainingService {
         if (session != null) {
             session.setCompareResult(result);
             session.setStatus("COMPARE_DONE");
-            session.setUpdatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
+            session.setUpdatedAt(LocalDateTime.now(ZoneId.of("UTC")));
         }
     }
 
@@ -57,7 +57,7 @@ public class AgentTrainingService {
                 session.setCheckerPrompt(checker);
             if (compare != null)
                 session.setComparePrompt(compare);
-            session.setUpdatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
+            session.setUpdatedAt(LocalDateTime.now(ZoneId.of("UTC")));
         }
     }
 }

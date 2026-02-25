@@ -4,14 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Test Orchestrator | Workflow Management Platform</title>
+  <title>Corp Action - AI Engine</title>
   <meta name="description" content="Enterprise Workflow Orchestration and Event Processing Platform">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-  <script src="https://unpkg.com/bpmn-js@17.11.1/dist/bpmn-navigated-viewer.production.min.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/bpmn-js@17.11.1/dist/assets/diagram-js.css">
-  <link rel="stylesheet" href="https://unpkg.com/bpmn-js@17.11.1/dist/assets/bpmn-js.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -21,8 +18,7 @@
       <div class="nav-left">
         <div class="logo-container">
           <div class="logo-icon-wrap"><i data-lucide="workflow" class="logo-svg"></i></div>
-          <span class="logo-text">Test Orchestrator</span>
-          <span class="version-badge">v2.0</span>
+          <span class="logo-text">Corp Action - AI Engine</span>
         </div>
       </div>
       <div class="nav-center">
@@ -34,9 +30,6 @@
         </button>
         <button class="nav-tab" data-view="train" onclick="switchView('train')" data-testid="tab-train">
           <i data-lucide="brain" class="tab-svg"></i> Train AI Agents
-        </button>
-        <button class="nav-tab" data-view="bpmn" onclick="switchView('bpmn')" data-testid="tab-bpmn">
-          <i data-lucide="git-branch" class="tab-svg"></i> Process Viewer
         </button>
       </div>
       <div class="nav-right">
@@ -139,7 +132,7 @@
           Available AI Agents
         </button>
         <button class="train-sub-tab" data-subtab="create" onclick="switchTrainSubTab('create')" data-testid="tab-create-agents">
-          Create AI Agents
+          Create AI Agent
         </button>
       </div>
 
@@ -157,8 +150,7 @@
         <div class="train-layout">
           <div class="train-header card">
             <div class="card-header">
-              <i data-lucide="brain" class="header-icon"></i>
-              <h2>Create AI Agents</h2>
+              <h2>Train</h2>
             </div>
             <div class="train-steps">
               <div class="train-step active" id="step-indicator-1"><span class="step-num">1</span> Maker Prompt</div>
@@ -175,7 +167,7 @@
           <div class="train-section card" id="train-step-1">
             <div class="card-header">
               <i data-lucide="file-spreadsheet" class="header-icon"></i>
-              <h2>Train Maker</h2>
+              <h2>Build Maker Prompt</h2>
               <span class="step-badge">Step 1</span>
             </div>
             <div class="train-section-body">
@@ -210,7 +202,7 @@
           <div class="train-section card locked" id="train-step-2">
             <div class="card-header">
               <i data-lucide="file-check" class="header-icon"></i>
-              <h2>Train Checker</h2>
+              <h2>Build Checker Prompt</h2>
               <span class="step-badge">Step 2</span>
               <span class="lock-badge" id="lock-badge-2"><i data-lucide="lock" class="lock-icon"></i> Finalize Maker first</span>
             </div>
@@ -294,31 +286,6 @@
       </div>
     </div>
 
-    <div class="view" id="view-bpmn">
-      <div class="card-header" style="margin-bottom:20px">
-        <i data-lucide="git-branch" class="header-icon"></i>
-        <h2>FluxNova Process Viewer</h2>
-        <span class="badge" style="margin-left:12px;font-size:11px">BPMN 2.0</span>
-      </div>
-      <div class="card bpmn-container">
-        <div class="bpmn-toolbar" data-testid="bpmn-toolbar">
-          <button class="btn btn-sm" onclick="bpmnZoomIn()" data-testid="btn-zoom-in"><i data-lucide="zoom-in"></i> Zoom In</button>
-          <button class="btn btn-sm" onclick="bpmnZoomOut()" data-testid="btn-zoom-out"><i data-lucide="zoom-out"></i> Zoom Out</button>
-          <button class="btn btn-sm" onclick="bpmnFitView()" data-testid="btn-fit-view"><i data-lucide="maximize-2"></i> Fit</button>
-          <button class="btn btn-sm" onclick="bpmnResetZoom()" data-testid="btn-reset-zoom"><i data-lucide="rotate-ccw"></i> Reset</button>
-          <span class="bpmn-process-name" id="bpmn-process-name" data-testid="text-process-name"></span>
-        </div>
-        <div class="bpmn-canvas" id="bpmn-canvas" data-testid="bpmn-canvas"></div>
-        <div class="bpmn-legend">
-          <div class="legend-item"><span class="legend-dot" style="background:#22b14c"></span> Start Event</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#ff3d00"></span> End Event</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#4296f4"></span> Service Task</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#f9a825"></span> User Task</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#7b1fa2"></span> Gateway</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#78909c"></span> Sequence Flow</div>
-        </div>
-      </div>
-    </div>
 
     <div class="modal-overlay" id="event-modal" onclick="closeModal()">
       <div class="modal card" onclick="event.stopPropagation()">

@@ -44,8 +44,8 @@ public class AgentConfig {
     private byte[] checkerFileData;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now(ZoneId.of("America/New_York"));
+    private LocalDateTime createdAt = LocalDateTime.now(ZoneId.of("UTC"));
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt = LocalDateTime.now(ZoneId.of("America/New_York"));
+    private LocalDateTime updatedAt = LocalDateTime.now(ZoneId.of("UTC"));
 }

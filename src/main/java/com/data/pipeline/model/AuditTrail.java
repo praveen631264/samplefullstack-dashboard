@@ -23,5 +23,5 @@ public class AuditTrail {
     @Column(columnDefinition = "TEXT")
     private String details;
     
-    private LocalDateTime createdAt = LocalDateTime.now(ZoneId.of("America/New_York"));
+    private LocalDateTime createdAt = LocalDateTime.now(ZoneId.of("UTC"));
 }

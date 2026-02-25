@@ -64,5 +64,5 @@ public class SampleEvent {
     private String workflowId;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now(ZoneId.of("America/New_York"));
+    private LocalDateTime createdAt = LocalDateTime.now(ZoneId.of("UTC"));
 }

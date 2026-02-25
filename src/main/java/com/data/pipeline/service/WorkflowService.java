@@ -39,8 +39,8 @@ public class WorkflowService {
         wf.setSource1FileData(s1Data);
         wf.setSource2FileData(s2Data);
         wf.setStatus("STARTED");
-        wf.setCreatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
-        wf.setUpdatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
+        wf.setCreatedAt(LocalDateTime.now(ZoneId.of("UTC")));
+        wf.setUpdatedAt(LocalDateTime.now(ZoneId.of("UTC")));
 
         WorkflowExecution saved = workflowRepository.save(wf);
         logAudit(saved.getWorkflowId(), "WORKFLOW_CREATED", "Started workflow for: " + description);
@@ -68,7 +68,7 @@ public class WorkflowService {
                 return wf;
             }
             wf.setStatus(finalStatus);
-            wf.setUpdatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
+            wf.setUpdatedAt(LocalDateTime.now(ZoneId.of("UTC")));
             if (eventType != null) wf.setEventType(eventType);
             if (cusip != null) wf.setCusip(cusip);
             if (eventId != null) wf.setEventId(eventId);
@@ -82,8 +82,8 @@ public class WorkflowService {
         audit.setWorkflowId(workflowId);
         audit.setAction(action);
         audit.setDetails(details);
-        audit.setCreatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
-        audit.setCreatedAt(LocalDateTime.now(ZoneId.of("America/New_York")));
+        audit.setCreatedAt(LocalDateTime.now(ZoneId.of("UTC")));
+        audit.setCreatedAt(LocalDateTime.now(ZoneId.of("UTC")));
         auditRepository.save(audit);
     }
 

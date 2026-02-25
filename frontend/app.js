@@ -21,7 +21,6 @@ function switchView(view) {
   }
   if (view === 'events') loadEvents();
   if (view === 'train') loadSavedAgents();
-  if (view === 'bpmn') renderBPMN();
   lucide.createIcons();
 }
 
@@ -65,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadAgentDropdown();
   startPolling();
-  renderBPMN();
 });
 
 let cachedAgents = [];
@@ -598,7 +596,13 @@ async function viewEventDetail(eventId) {
           ${ev.workflowId ? `<div class="detail-item"><div class="detail-label">Workflow ID</div><div class="detail-value"><code>${ev.workflowId}</code></div></div>` : ''}
           <div class="detail-item"><div class="detail-label">Created</div><div class="detail-value">${formatDetailedTime(ev.createdAt)}</div></div>
         </div>
-        ${ev.remarks ? `<div class="modal-remarks"><div class="detail-label">Remarks</div><div class="modal-remarks-text">${ev.remarks}</div></div>` : ''}
+        ${(() => {
+          const isVerified = ev.status === 'COMPLETED' || ev.status === 'COMPLETED_WITH_FAILURE' || ev.status === 'Verified' || (ev.status || '').toLowerCase() === 'verified';
+          const remarksText = isVerified
+            ? 'The Maker (Source 1) data matches the Checker (Source 2) data.'
+            : ev.remarks;
+          return remarksText ? `<div class="modal-remarks"><div class="detail-label">Remarks</div><div class="modal-remarks-text">${remarksText}</div></div>` : '';
+        })()}
       </div>
       ${fileLinksHtml}
       ${ev.source1Data || ev.source2Data ? `
@@ -641,99 +645,6 @@ function closeModal() {
 }
 
 
-let bpmnViewer = null;
-
-async function renderBPMN() {
-  const canvas = document.getElementById('bpmn-canvas');
-  const processName = document.getElementById('bpmn-process-name');
-
-  if (bpmnViewer) {
-    bpmnViewer.destroy();
-    bpmnViewer = null;
-  }
-
-  canvas.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted)"><i data-lucide="loader" class="spin" style="margin-right:8px"></i> Loading BPMN diagram...</div>';
-  lucide.createIcons();
-
-  try {
-    const res = await fetch('/api/bpmn/ca-event-processing');
-    if (!res.ok) throw new Error('Failed to load BPMN');
-    const xml = await res.text();
-
-    canvas.innerHTML = '';
-    bpmnViewer = new BpmnJS({ container: canvas });
-
-    const result = await bpmnViewer.importXML(xml);
-
-    const canvasModule = bpmnViewer.get('canvas');
-    canvasModule.zoom('fit-viewport');
-
-    const defs = bpmnViewer.getDefinitions();
-    if (defs && defs.rootElements) {
-      const proc = defs.rootElements.find(e => e.$type === 'bpmn:Process');
-      if (proc && proc.name) {
-        processName.textContent = proc.name;
-      }
-    }
-
-    applyBpmnStyling();
-
-  } catch (err) {
-    canvas.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);flex-direction:column;gap:8px">
-      <i data-lucide="alert-triangle" style="width:32px;height:32px;color:#f59e0b"></i>
-      <span>Failed to load BPMN diagram</span>
-      <span style="font-size:11px">${err.message}</span>
-    </div>`;
-    lucide.createIcons();
-  }
-}
-
-function applyBpmnStyling() {
-  if (!bpmnViewer) return;
-  const elementRegistry = bpmnViewer.get('elementRegistry');
-  const canvas = bpmnViewer.get('canvas');
-
-  elementRegistry.forEach(function (element) {
-    const bo = element.businessObject;
-    if (!bo) return;
-
-    if (bo.$type === 'bpmn:ServiceTask') {
-      canvas.addMarker(element.id, 'bpmn-service-task');
-    } else if (bo.$type === 'bpmn:UserTask') {
-      canvas.addMarker(element.id, 'bpmn-user-task');
-    } else if (bo.$type === 'bpmn:ParallelGateway') {
-      canvas.addMarker(element.id, 'bpmn-parallel-gw');
-    } else if (bo.$type === 'bpmn:ExclusiveGateway') {
-      canvas.addMarker(element.id, 'bpmn-exclusive-gw');
-    } else if (bo.$type === 'bpmn:StartEvent') {
-      canvas.addMarker(element.id, 'bpmn-start-event');
-    } else if (bo.$type === 'bpmn:EndEvent') {
-      canvas.addMarker(element.id, 'bpmn-end-event');
-    }
-  });
-}
-
-function bpmnZoomIn() {
-  if (!bpmnViewer) return;
-  const c = bpmnViewer.get('canvas');
-  c.zoom(c.zoom() * 1.2);
-}
-
-function bpmnZoomOut() {
-  if (!bpmnViewer) return;
-  const c = bpmnViewer.get('canvas');
-  c.zoom(c.zoom() / 1.2);
-}
-
-function bpmnFitView() {
-  if (!bpmnViewer) return;
-  bpmnViewer.get('canvas').zoom('fit-viewport');
-}
-
-function bpmnResetZoom() {
-  if (!bpmnViewer) return;
-  bpmnViewer.get('canvas').zoom(1.0);
-}
 
 function startPolling() {
   if (pollingInterval) clearInterval(pollingInterval);
@@ -781,15 +692,22 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
+function parseUtcDate(dateStr) {
+  if (!dateStr) return null;
+  if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !/[+-]\d\d:\d\d$/.test(dateStr)) {
+    dateStr = dateStr + 'Z';
+  }
+  return new Date(dateStr);
+}
+
 function formatDetailedTime(dateStr) {
   if (!dateStr) return '';
-  return new Date(dateStr).toLocaleString('en-US', { timeZone: 'America/New_York' });
+  return parseUtcDate(dateStr).toLocaleString('en-US', { timeZone: 'America/New_York' });
 }
 
 function formatShortTime(dateStr) {
   if (!dateStr) return '';
-  const d = new Date(dateStr);
-  return d.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' });
+  return parseUtcDate(dateStr).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit' });
 }
 
 function formatJSON(data) {
